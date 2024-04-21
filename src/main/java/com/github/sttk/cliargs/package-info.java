@@ -5,9 +5,6 @@
  */
 
 /**
- * Defines the APIs for operating command line arguments.
+ * Provides the classes to parse and print comand line arguments.
  */
-module com.github.sttk.cliargs {
-  exports com.github.sttk.cliargs;
-  requires com.github.sttk.reasonedexception;
-}
+package com.github.sttk.cliargs;

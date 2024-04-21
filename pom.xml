@@ -55,6 +55,12 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
+      <groupId>io.github.sttk</groupId>
+      <artifactId>reasonedexception</artifactId>
+      <version>0.2.0</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
       <version>5.10.1</version>
@@ -106,7 +112,7 @@
           <encoding>UTF-8</encoding>
           <charset>UTF-8</charset>
           <docencoding>UTF-8</docencoding>
-          <bottom><![CDATA[Copyright 2023 Takayuki Sato. All Rights Reserved.]]></bottom>
+          <bottom><![CDATA[Copyright 2024 Takayuki Sato. All Rights Reserved.]]></bottom>
         </configuration>
         <executions>
           <execution>
