@@ -67,7 +67,7 @@ public class CliArgs {
    * alphabets.)
    * <p>
    * A short format option starts with {@code "-"} and follows single character
-   * which is {@code "-"} and follows single character which is an alphabet.
+   * which is an alphabet.
    * Multiple short options can be combined into one argument.
    * (For example {@code -a -b -c} can be combined into {@code -abc}.)
    * Moreover, a short option can be followed by {@code "="} and its option
@@ -76,7 +76,7 @@ public class CliArgs {
    * option argument.
    * (For example, {@code -abc=3} is equal to {@code -a -b -c=3}.)
    *
-   * @return A {@link Cmd} object that contains the parsed result.
+   * @return A {@link Result} object that contains the parsed result.
    */
   public Result parse() {
     return Parse.parse(this.cmd, this.args);
