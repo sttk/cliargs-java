@@ -9,10 +9,6 @@ import java.util.List;
 
 interface Util {
 
-  static String orEmpty(String value) {
-    return (value != null) ? value : "";
-  }
-
   static boolean isEmpty(String value) {
     return (value == null || value.isEmpty());
   }

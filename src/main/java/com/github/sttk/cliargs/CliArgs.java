@@ -5,10 +5,15 @@
  */
 package com.github.sttk.cliargs;
 
+import com.github.sttk.reasonedexception.ReasonedException;
+import java.util.List;
+
 /**
  * Provides the static methods to parse and print command line arguments.
  */
 public class CliArgs {
+
+  /// Exception reasons on parsing command line arguments.
 
   /**
    * Is implemented by records that indicate exception reasons, and provides a
@@ -31,6 +36,101 @@ public class CliArgs {
    */
   public record OptionHasInvalidChar(String option)
     implements InvalidOption {}
+
+  /**
+   * Is the exception reason which indicates that there is no configuration
+   * about the input option.
+   *
+   * @param option  An option name.
+   */
+  public record UnconfiguredOption(String option)
+    implements InvalidOption {}
+
+  /**
+   * Is the exception reason which indicates that an option is input with no
+   * option argument though its option configuration requires option argument
+   * ({@code .hasArg == true}).
+   *
+   * @param option  An option name.
+   * @param storeKey  A store key.
+   */
+  public record OptionNeedsArg(String option, String storeKey)
+    implements InvalidOption {}
+
+  /**
+   * Is the exception reason which indicates that an option is input with an
+   * option argument though its option configuration does not accept option
+   * arguments ({@code .hasArg == false}).
+   *
+   * @param option  An option name.
+   * @param storeKey  A store key.
+   * @param optArg  An option argument.
+   */
+  public record OptionTakesNoArg(String option, String storeKey, String optArg)
+    implements InvalidOption {}
+
+  /**
+   * Is the exception reason which indicates that an option is input with an
+   * option argument multiple times though its option configuration specifies
+   * the option is not an array ({@code .isArray == false}).
+   *
+   * @param option  An option name.
+   * @param storeKey  A store key.
+   * @param optArg  An option argument.
+   */
+  public record OptionIsNotArray(String option, String storeKey, String optArg)
+    implements InvalidOption {}
+
+  /**
+   * Is the exception reason which indicates that an option argument is failed
+   * to convert the specified type value.
+   *
+   * @param optArg  An option argument.
+   * @param option  An option name.
+   * @param storeKey  A store key.
+   */
+  public record FailToConvertOptionArg(
+    String optArg, String option, String storeKey
+  ) implements InvalidOption {}
+
+  /// Exception reasones for option configurations.
+
+  /**
+   * Is the exception reason which indicates that a store key in an option
+   * configuration is duplicated another among all option configurations.
+   *
+   * @param storeKey  A store key.
+   */
+  public record StoreKeyIsDuplicated(String storeKey) {}
+
+  /**
+   * Is the exception reason which indicates that an option configuration
+   * contradicts that the option must be an array ({@code .isArray == true})
+   * though it has no option argument ({@code .hasArg == false}).
+   *
+   * @param storeKey  A store key.
+   */
+  public record ConfigIsArrayButHasNoArg(String storeKey) {}
+
+  /**
+   * Is the exception reason which indicates that an opiton configuration
+   * contradicts that the option has default value(s)
+   * ({@code .defaults != null}) though it has no option argument
+   * ({@code .hasArg == false}).
+   *
+   * @param storeKey  A store key.
+   */
+  public record ConfigHasDefaultsButHasNoArg(String storeKey) {}
+
+  /**
+   * Is the exception reason which indicates that an option name in
+   * {@code .names} field is duplicated another among all option
+   * configurations.
+   *
+   * @param storeKey  A store key.
+   * @param option  An option name.
+   */
+  public record OptionNameIsDuplicated(String storeKey, String option) {}
 
   ///
 
@@ -80,5 +180,44 @@ public class CliArgs {
    */
   public Result parse() {
     return Parse.parse(this.cmd, this.args);
+  }
+
+  /**
+   * Parses command line arguments with option configurations.
+   * <p>
+   * This method divides command line arguments to command arguments and
+   * options.
+   * And an option consists of a name and an option argument.
+   * Options are divided to long format options and short format options.
+   * About long/short format options, since they are same with {@link parse}
+   * method, see the comment of that method.
+   * <p>
+   * This method basically allows only options declared in option
+   * configurations.
+   * An option configuration has fields: {@code storeKey}, {@code names},
+   * {@code hasArg}, {@code isArray}, {@code type}, {@code defaults},
+   * {@code desc}, {@code argInHelp}, and {@code converter}.
+   * When an option in command line arguments matches one of the {@code names}
+   * in an option configuration, the option is registered into {@code Cmd} with
+   * {@code storeKey}.
+   * If both {@code hasArg} and {@code isArray} are true, the option can have
+   * one or multiple option arguments, and if {@code hasArg} is true and
+   * {@code isArray} is false, the option can have only one option argument,
+   * otherwise the option cannot have option arguments.
+   * If {@code defaults} is specified and no option value is give in command
+   * arguments.
+   * <p>
+   * If options not declared in option configurations are given in command line
+   * arguments, this method basically throws a {@link ReasonedException} with
+   * the reason {@code UnconfiguredOption}.
+   * However, if you want to allow other options, add an option configuration
+   * of which {@code storeKey} or the first element of {@code names} is
+   * {@code "*"}.
+   *
+   * @param optCfgs  An array of {@code OptCfg} objects.
+   * @return  A {@link Result} object that contains the parsed result.
+   */
+  public Result parseWith(OptCfg[] optCfgs) {
+    return ParseWith.parse(optCfgs, this.cmd, this.args);
   }
 }

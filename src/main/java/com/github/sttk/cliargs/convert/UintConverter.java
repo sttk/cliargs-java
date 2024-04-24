@@ -1,0 +1,77 @@
+/*
+ * Copyright (C) 2024 Takayuki Sato. All Rights Reserved.
+ * This program is free software under MIT License.
+ * See the file LICENSE in this distribution for more details.
+ */
+package com.github.sttk.cliargs.convert;
+
+import com.github.sttk.cliargs.CliArgs.InvalidOption;
+import com.github.sttk.reasonedexception.ReasonedException;
+
+/**
+ * Is the converter that converts the given option argument string to an
+ * unsigned integer value.
+ */
+public class UintConverter implements Converter<Integer> {
+
+  /**
+   * Creates a new instance of this class.
+   */
+  public UintConverter() {}
+
+  /**
+   * Is the exception reason which indicates that the option argument is
+   * invalid format as an unsigned integer.
+   *
+   * @param optArg  The option argument string.
+   * @param option  The option name.
+   * @param storeKey  The store key.
+   */
+  public record InvalidIntegerFormat(
+    String optArg, String option, String storeKey
+  ) implements InvalidOption {}
+
+  /**
+   * Is the exception reason which indicates that the converted integer value
+   * is negative though it should be zero or positive.
+   * 
+   * @param optArg  The option argument string.
+   * @param option  The option name.
+   * @param storeKey  The store key.
+   */
+  record IntegerIsNegative(String optArg, String option, String storeKey)
+    implements InvalidOption {}
+
+  /**
+   * Converts the given string to the typed option argument.
+   *
+   * @param optArg  The string to be validated.
+   * @param option  The option name.
+   * @param storeKey  The store key.
+   * @return  A converted value.
+   * @throws ReasonedException  If failed to convert by the follow reasons:
+   *  <ul>
+   *   <li>{@link UintConverter.InvalidIntegerFormat} …
+   *     The give string is invalid format as an integer.</li>
+   *   <li>{@link UintConverter.IntegerIsNegative} …
+   *     The converted integer is negative though it should be zero or
+   *     positive.</li>
+   *  </ul>
+   */
+  public Integer convert(
+    String optArg, String option, String storeKey
+  ) throws ReasonedException {
+    int n;
+    try {
+      n = Integer.valueOf(optArg);
+    } catch (Exception e) {
+      var reason = new InvalidIntegerFormat(optArg, option, storeKey);
+      throw new ReasonedException(reason, e);
+    }
+    if (n < 0) {
+      var reason = new IntegerIsNegative(optArg, option, storeKey);
+      throw new ReasonedException(reason);
+    }
+    return n;
+  }
+}

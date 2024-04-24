@@ -9,5 +9,6 @@
  */
 module com.github.sttk.cliargs {
   exports com.github.sttk.cliargs;
+  exports com.github.sttk.cliargs.convert;
   requires com.github.sttk.reasonedexception;
 }
