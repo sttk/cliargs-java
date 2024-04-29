@@ -11,7 +11,6 @@ import com.github.sttk.cliargs.convert.IntConverter;
 import com.github.sttk.cliargs.convert.LongConverter;
 import com.github.sttk.cliargs.convert.FloatConverter;
 import com.github.sttk.cliargs.convert.DoubleConverter;
-import com.github.sttk.cliargs.convert.UintConverter;
 import com.github.sttk.reasonedexception.ReasonedException;
 import java.util.List;
 import java.time.OffsetDateTime;
@@ -376,7 +375,7 @@ public class OptCfgTest {
       isArray(true),
       names("foo-bar", "f"),
       storeKey("FooBar"),
-      converter(new UintConverter()),
+      converter(new IntConverter()),
       hasArg(true),
       argInHelp("<num>"),
       type(Integer.class),
@@ -393,6 +392,6 @@ public class OptCfgTest {
     assertThat(optCfg.defaults.get(1)).isEqualTo(45);
     assertThat(optCfg.desc).isEqualTo("The option description");
     assertThat(optCfg.argInHelp).isEqualTo("<num>");
-    assertThat(optCfg.converter).isInstanceOf(UintConverter.class);
+    assertThat(optCfg.converter).isInstanceOf(IntConverter.class);
   }
 }

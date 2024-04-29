@@ -24,7 +24,7 @@ import com.github.sttk.cliargs.CliArgs.OptionNameIsDuplicated;
 import com.github.sttk.cliargs.CliArgs.OptionNeedsArg;
 import com.github.sttk.cliargs.CliArgs.OptionTakesNoArg;
 import com.github.sttk.cliargs.convert.IntConverter.InvalidIntegerFormat;
-import com.github.sttk.cliargs.convert.UintConverter;
+import com.github.sttk.cliargs.convert.IntConverter;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -1846,7 +1846,7 @@ public class ParseWithTest {
     @SuppressWarnings("unchecked")
     var cfgs = new OptCfg[]{
       new OptCfg(
-        names("foo"), type(Integer.class), converter(new UintConverter())
+        names("foo"), type(Integer.class), converter(new IntConverter())
       )
     };
 
