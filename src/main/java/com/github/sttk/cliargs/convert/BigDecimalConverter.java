@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 
 /**
  * Is the converter that converts the given option argument string to a big
- * integer value.
+ * decimal value.
  */
 public class BigDecimalConverter implements Converter<BigDecimal> {
 
@@ -22,7 +22,7 @@ public class BigDecimalConverter implements Converter<BigDecimal> {
 
   /**
    * Is the exception reason which indicates that the option argument is
-   * invalid format as an long value.
+   * invalid format as an big decimal value.
    *
    * @param optArg  The option argument string.
    * @param option  The option name.

@@ -22,7 +22,7 @@ public class BigIntConverter implements Converter<BigInteger> {
 
   /**
    * Is the exception reason which indicates that the option argument is
-   * invalid format as an integer value.
+   * invalid format as a big integer value.
    *
    * @param optArg  The option argument string.
    * @param option  The option name.
@@ -42,7 +42,7 @@ public class BigIntConverter implements Converter<BigInteger> {
    * @throws ReasonedException  If failed to convert by the follow reasons:
    *  <ul>
    *   <li>{@link BigIntConverter.InvalidBigIntFormat} …
-   *     The give string is invalid format as a long.</li>
+   *     The give string is invalid format as a big integer.</li>
    *  </ul>
    */
   public BigInteger convert(

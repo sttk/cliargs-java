@@ -204,8 +204,14 @@ public class CliArgs {
    * one or multiple option arguments, and if {@code hasArg} is true and
    * {@code isArray} is false, the option can have only one option argument,
    * otherwise the option cannot have option arguments.
-   * If {@code defaults} is specified and no option value is give in command
-   * arguments.
+   * If {@code defaults} is specified and no option argument is give in command
+   * line arguments, the option argument(s) is set to the value(s) of
+   * {@code defaults}.
+   * If {@code converter} is specified and option argument(s) is given in
+   * command line arguments, the value or each of option argument(s) are
+   * converted with the {@code converter}.
+   * If {@code type} is specified but {@code converter} is not specified,
+   * a converter which converts a string to the specified type value is set.
    * <p>
    * If options not declared in option configurations are given in command line
    * arguments, this method basically throws a {@link ReasonedException} with
