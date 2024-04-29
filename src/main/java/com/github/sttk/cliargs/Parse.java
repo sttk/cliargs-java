@@ -24,7 +24,11 @@ interface Parse {
 
   @FunctionalInterface
   static interface OptArgCollector {
-    void collect(String name, String ...args) throws ReasonedException;
+    void collect(String name, String arg) throws ReasonedException;
+
+    default void collect(String name) throws ReasonedException {
+      collect(name, null);
+    }
   }
 
   @FunctionalInterface
@@ -45,8 +49,8 @@ interface Parse {
         arr = new ArrayList<>();
         opts.put(name, arr);
       }
-      for (var e : a) {
-        arr.add(e);
+      if (a != null) {
+        arr.add(a);
       }
     };
 
@@ -61,7 +65,7 @@ interface Parse {
 
     cmdName = Path.of(cmdName).getFileName().toString();
     var cmd = new Cmd(cmdName, args, opts);
-    return new Result(cmd, exc);
+    return new Result(cmd, null, exc);
   }
 
   static void parseArgs(

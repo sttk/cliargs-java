@@ -1,6 +1,5 @@
 package com.github.sttk.cliargs;
 
-import static com.github.sttk.cliargs.Util.orEmpty;
 import static com.github.sttk.cliargs.Util.isEmpty;
 import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
@@ -8,13 +7,6 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class UtilTest {
-
-  @Test
-  void testOrEmpty_string() {
-    assertThat(orEmpty("abc")).isEqualTo("abc");
-    assertThat(orEmpty("")).isEqualTo("");
-    assertThat(orEmpty(null)).isEqualTo("");
-  }
 
   @Test
   void testIsEmpty_string() {

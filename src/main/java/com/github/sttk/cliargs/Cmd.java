@@ -71,6 +71,8 @@ public class Cmd {
    * If there is no option argument for the specified option, this method
    * returns null.
    *
+   * @param <T>  The type of of option argument value.
+   *
    * @param name The option name.
    * @return The first option argument of the specified option.
    */
@@ -89,6 +91,8 @@ public class Cmd {
    * <p>
    * If there is no option argument for the specified option, this method
    * returns an empty list.
+   *
+   * @param <T>  The type of of option argument list.
    *
    * @param name The option name.
    * @return The option arguments of the specified option.

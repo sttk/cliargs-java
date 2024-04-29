@@ -11,9 +11,10 @@ import com.github.sttk.reasonedexception.ReasonedException;
  * Is the record class that contains the result of parsing methods.
  *
  * @param cmd  A {@link Cmd} object.
+ * @param optCfgs  An array of {@link OptCfg} objects.
  * @param exception  An exception object that occured while parsing.
  */
-public record Result(Cmd cmd, ReasonedException exception) {
+public record Result(Cmd cmd, OptCfg[] optCfgs, ReasonedException exception) {
 
   /**
    * Throws the exception that occured while parseing command line arguments.
