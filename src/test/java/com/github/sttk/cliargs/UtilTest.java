@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.ArrayList;
 
+@SuppressWarnings("missing-explicit-ctor")
 public class UtilTest {
 
   @Test

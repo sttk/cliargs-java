@@ -255,71 +255,82 @@ public class OptCfg {
    *
    * @param <T> The type of the option argument value.
    */
+  @SuppressWarnings("unchecked")
   @FunctionalInterface
   public interface NamedParam<T> {
     /**
      * Sets a field value of {@link Init} object that has same fields with
      * {@link OptCfg} object and is used to initialized it.
      *
-     * @param init  {@link Init} object to initialize {@link OptCfg} object.
+     * @param init  An object to initialize {@link OptCfg} object.
      */
-    void setTo(Init<T> init);
+    void setTo(Object init);
 
     /**
      * Is the static method to set the {@code storeKey} field like a named
      * parameter.
      *
+     * @param <T> The type of the option argument value.
+     *
      * @param storeKey  The value of the {@code storeKey} field.
      * @return  The {@link NamedParam} object for {@code storeKey} field.
      */
-    static NamedParam storeKey(String storeKey) {
-      return init -> init.storeKey = storeKey;
+    static <T> NamedParam<T> storeKey(String storeKey) {
+      return init -> ((Init<T>)init).storeKey = storeKey;
     }
 
     /**
      * Is the static method to set the {@code names} field like a named
      * parameter.
      *
+     * @param <T> The type of the option argument value.
+     *
      * @param names  The string array of the {@code names} field.
      * @return  The {@link NamedParam} object for {@code storeKey} field.
      */
     @SuppressWarnings("unchecked")
-    static NamedParam names(String ...names) {
-      return init -> init.names = List.of(names);
+    static <T> NamedParam<T> names(String ...names) {
+      return init -> ((Init<T>)init).names = List.of(names);
     }
 
     /**
      * Is the static method to set the {@code names} field like a named
      * parameter.
      * 
+     * @param <T> The type of the option argument value.
+     *
      * @param list  The string list of the {@code names} field.
      * @return  The {@link NamedParam} object for {@code storeKey} field.
      */
     @SuppressWarnings("unchecked")
-    static NamedParam names(List<String> list) {
-      return init -> init.names = list;
+    static <T> NamedParam<T> names(List<String> list) {
+      return init -> ((Init<T>)init).names = list;
     }
 
     /**
      * Is the static method to set the {@code hasArg} field like a named
      * parameter.
      *
+     * @param <T> The type of the option argument value.
+     *
      * @param hasArg  The value of the {@code hasArg} field.
      * @return  The {@link NamedParam} object for {@code hasArg} field.
      */
-    static NamedParam hasArg(boolean hasArg) {
-      return init -> init.hasArg = hasArg;
+    static <T> NamedParam<T> hasArg(boolean hasArg) {
+      return init -> ((Init<T>)init).hasArg = hasArg;
     }
 
     /**
      * Is the static method to set the {@code isArray} field like a named
      * parameter.
      *
+     * @param <T> The type of the option argument value.
+     *
      * @param isArray  The value of the {@code isArray} field.
      * @return  The {@link NamedParam} object for {@code isArray} field.
      */
-    static NamedParam isArray(boolean isArray) {
-      return init -> init.isArray = isArray;
+    static <T> NamedParam<T> isArray(boolean isArray) {
+      return init -> ((Init<T>)init).isArray = isArray;
     }
 
     /**
@@ -332,7 +343,7 @@ public class OptCfg {
      * @return  The {@link NamedParam} object for {@code type} field.
      */
     static <T> NamedParam<T> type(Class<T> type) {
-      return init -> init.type = type;
+      return init -> ((Init<T>)init).type = type;
     }
 
     /**
@@ -345,8 +356,9 @@ public class OptCfg {
      * @return  The {@link NamedParam} object for {@code defaults} field.
      */
     @SafeVarargs
+    @SuppressWarnings("varargs")
     static <T> NamedParam<T> defaults(T ...defaults) {
-      return init -> init.defaults = List.of(defaults);
+      return init -> ((Init<T>)init).defaults = List.of(defaults);
     }
 
     /**
@@ -359,29 +371,33 @@ public class OptCfg {
      * @return  The {@link NamedParam} object for {@code defaults} field.
      */
     static <T> NamedParam<T> defaults(List<T> defaults) {
-      return init -> init.defaults = defaults;
+      return init -> ((Init<T>)init).defaults = defaults;
     }
 
     /**
      * Is the static method to set the {@code desc} field like a named
      * parameter.
      *
+     * @param <T> The type of the option argument value.
+     *
      * @param desc  The value of the {@code desc} field.
      * @return  The {@link NamedParam} object for {@code defaults} field.
      */
-    static NamedParam desc(String desc) {
-      return init -> init.desc = desc;
+    static <T> NamedParam<T> desc(String desc) {
+      return init -> ((Init<T>)init).desc = desc;
     }
 
     /**
      * Is the static method to set the {@code argInHelp} field like a named
      * parameter.
      *
+     * @param <T> The type of the option argument value.
+     *
      * @param argInHelp  The value of the {@code argInHelp} field.
      * @return  The {@link NamedParam} object for {@code argInHelp} field.
      */
-    static NamedParam argInHelp(String argInHelp) {
-      return init -> init.argInHelp = argInHelp;
+    static <T> NamedParam<T> argInHelp(String argInHelp) {
+      return init -> ((Init<T>)init).argInHelp = argInHelp;
     }
 
     /**
@@ -394,7 +410,7 @@ public class OptCfg {
      * @return  The {@link NamedParam} object for {@code converter} field.
      */
     static <T> NamedParam<T> converter(Converter<T> converter) {
-      return init -> init.converter = converter;
+      return init -> ((Init<T>)init).converter = converter;
     }
   }
 }

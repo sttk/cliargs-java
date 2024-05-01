@@ -9,6 +9,7 @@ import com.github.sttk.cliargs.OptCfg;
 import com.github.sttk.exception.ReasonedException;
 import java.math.BigDecimal;
 
+@SuppressWarnings("missing-explicit-ctor")
 public class BigDecimalConverterTest {
 
   @Test

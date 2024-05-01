@@ -8,6 +8,7 @@ import static com.github.sttk.cliargs.OptCfg.NamedParam.*;
 import com.github.sttk.cliargs.OptCfg;
 import com.github.sttk.exception.ReasonedException;
 
+@SuppressWarnings("missing-explicit-ctor")
 public class ByteConverterTest {
 
   @Test

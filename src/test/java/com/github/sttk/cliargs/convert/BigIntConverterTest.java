@@ -9,6 +9,7 @@ import com.github.sttk.cliargs.OptCfg;
 import com.github.sttk.exception.ReasonedException;
 import java.math.BigInteger;
 
+@SuppressWarnings("missing-explicit-ctor")
 public class BigIntConverterTest {
 
   @Test
