@@ -11,7 +11,7 @@ import static com.github.sttk.cliargs.OptCfg.NamedParam.isArray;
 import static com.github.sttk.cliargs.OptCfg.NamedParam.defaults;
 import static com.github.sttk.cliargs.OptCfg.NamedParam.type;
 import static com.github.sttk.cliargs.OptCfg.NamedParam.converter;
-import com.github.sttk.reasonedexception.ReasonedException;
+import com.github.sttk.exception.ReasonedException;
 import com.github.sttk.cliargs.CliArgs.ConfigHasDefaultsButHasNoArg;
 import com.github.sttk.cliargs.CliArgs.ConfigIsArrayButHasNoArg;
 import com.github.sttk.cliargs.CliArgs.FailToConvertOptionArg;

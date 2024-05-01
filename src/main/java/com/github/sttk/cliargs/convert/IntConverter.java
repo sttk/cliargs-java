@@ -6,7 +6,7 @@
 package com.github.sttk.cliargs.convert;
 
 import com.github.sttk.cliargs.CliArgs.InvalidOption;
-import com.github.sttk.reasonedexception.ReasonedException;
+import com.github.sttk.exception.ReasonedException;
 
 /**
  * Is the converter that converts the given option argument string to an

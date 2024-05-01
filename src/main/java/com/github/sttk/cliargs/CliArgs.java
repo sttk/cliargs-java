@@ -5,7 +5,7 @@
  */
 package com.github.sttk.cliargs;
 
-import com.github.sttk.reasonedexception.ReasonedException;
+import com.github.sttk.exception.ReasonedException;
 import java.util.List;
 
 /**

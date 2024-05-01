@@ -11,7 +11,7 @@ import com.github.sttk.cliargs.convert.IntConverter;
 import com.github.sttk.cliargs.convert.LongConverter;
 import com.github.sttk.cliargs.convert.FloatConverter;
 import com.github.sttk.cliargs.convert.DoubleConverter;
-import com.github.sttk.reasonedexception.ReasonedException;
+import com.github.sttk.exception.ReasonedException;
 import java.util.List;
 import java.time.OffsetDateTime;
 

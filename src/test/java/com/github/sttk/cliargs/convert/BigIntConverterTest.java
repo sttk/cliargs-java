@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import static com.github.sttk.cliargs.OptCfg.NamedParam.*;
 import com.github.sttk.cliargs.OptCfg;
-import com.github.sttk.reasonedexception.ReasonedException;
+import com.github.sttk.exception.ReasonedException;
 import java.math.BigInteger;
 
 public class BigIntConverterTest {

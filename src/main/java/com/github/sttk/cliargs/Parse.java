@@ -6,7 +6,7 @@
 package com.github.sttk.cliargs;
 
 import static com.github.sttk.cliargs.Util.isEmpty;
-import com.github.sttk.reasonedexception.ReasonedException;
+import com.github.sttk.exception.ReasonedException;
 import com.github.sttk.cliargs.unicode.Ascii;
 import com.github.sttk.cliargs.CliArgs.OptionHasInvalidChar;
 import java.nio.file.Path;
