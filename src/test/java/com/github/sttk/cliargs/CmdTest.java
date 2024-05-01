@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 
+@SuppressWarnings("missing-explicit-ctor")
 public class CmdTest {
 
   @Test

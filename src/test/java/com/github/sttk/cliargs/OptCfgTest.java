@@ -15,6 +15,7 @@ import com.github.sttk.exception.ReasonedException;
 import java.util.List;
 import java.time.OffsetDateTime;
 
+@SuppressWarnings("missing-explicit-ctor")
 public class OptCfgTest {
 
   @Test

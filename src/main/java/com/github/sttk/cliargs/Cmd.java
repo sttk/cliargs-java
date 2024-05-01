@@ -97,7 +97,7 @@ public class Cmd {
    * @param name The option name.
    * @return The option arguments of the specified option.
    */
-  public <T extends List> T getOptArgs(String name) {
+  public <T extends List<?>> T getOptArgs(String name) {
     var list = this.opts.get(name);
     if (isEmpty(list)) {
       @SuppressWarnings("unchecked")

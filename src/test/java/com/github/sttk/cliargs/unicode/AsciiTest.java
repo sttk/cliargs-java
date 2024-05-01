@@ -6,6 +6,7 @@ import static com.github.sttk.cliargs.unicode.Ascii.isAlphabets;
 
 import org.junit.jupiter.api.Test;
 
+@SuppressWarnings("missing-explicit-ctor")
 public class AsciiTest {
 
   @Test

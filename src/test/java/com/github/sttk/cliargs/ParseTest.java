@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 
+@SuppressWarnings("missing-explicit-ctor")
 public class ParseTest {
 
   @Test
@@ -31,10 +32,10 @@ public class ParseTest {
     assertThat(cmd.hasOpt("alphabet")).isFalse();
     assertThat(cmd.hasOpt("s")).isFalse();
 
-    assertThat((Object)cmd.getOptArg("a")).isNull();
-    assertThat((Object)cmd.getOptArg("alphabet")).isNull();
-    assertThat((Object)cmd.getOptArg("s")).isNull();
-    assertThat((Object)cmd.getOptArg("silent")).isNull();
+    assertThat((String)cmd.getOptArg("a")).isNull();
+    assertThat((String)cmd.getOptArg("alphabet")).isNull();
+    assertThat((String)cmd.getOptArg("s")).isNull();
+    assertThat((String)cmd.getOptArg("silent")).isNull();
 
     assertThat((List<?>)cmd.getOptArgs("a")).isEmpty();
     assertThat((List<?>)cmd.getOptArgs("alphabet")).isEmpty();
@@ -59,10 +60,10 @@ public class ParseTest {
     assertThat(cmd.hasOpt("s")).isFalse();
     assertThat(cmd.hasOpt("silent")).isFalse();
 
-    assertThat((Object)cmd.getOptArg("a")).isNull();
-    assertThat((Object)cmd.getOptArg("alphabet")).isNull();
-    assertThat((Object)cmd.getOptArg("s")).isNull();
-    assertThat((Object)cmd.getOptArg("silent")).isNull();
+    assertThat((String)cmd.getOptArg("a")).isNull();
+    assertThat((String)cmd.getOptArg("alphabet")).isNull();
+    assertThat((String)cmd.getOptArg("s")).isNull();
+    assertThat((String)cmd.getOptArg("silent")).isNull();
 
     assertThat((List<?>)cmd.getOptArgs("a")).isEmpty();
     assertThat((List<?>)cmd.getOptArgs("alphabet")).isEmpty();
@@ -88,10 +89,10 @@ public class ParseTest {
     assertThat(cmd.hasOpt("s")).isFalse();
     assertThat(cmd.hasOpt("silent")).isTrue();
 
-    assertThat((Object)cmd.getOptArg("a")).isNull();
-    assertThat((Object)cmd.getOptArg("alphabet")).isNull();
-    assertThat((Object)cmd.getOptArg("s")).isNull();
-    assertThat((Object)cmd.getOptArg("silent")).isNull();
+    assertThat((String)cmd.getOptArg("a")).isNull();
+    assertThat((String)cmd.getOptArg("alphabet")).isNull();
+    assertThat((String)cmd.getOptArg("s")).isNull();
+    assertThat((String)cmd.getOptArg("silent")).isNull();
 
     assertThat((List<?>)cmd.getOptArgs("a")).isEmpty();
     assertThat((List<?>)cmd.getOptArgs("alphabet")).isEmpty();
@@ -117,10 +118,10 @@ public class ParseTest {
     assertThat(cmd.hasOpt("s")).isFalse();
     assertThat(cmd.hasOpt("silent")).isFalse();
 
-    assertThat((Object)cmd.getOptArg("a")).isNull();
+    assertThat((String)cmd.getOptArg("a")).isNull();
     assertThat((String)cmd.getOptArg("alphabet")).isEqualTo("ABC");
-    assertThat((Object)cmd.getOptArg("s")).isNull();
-    assertThat((Object)cmd.getOptArg("silent")).isNull();
+    assertThat((String)cmd.getOptArg("s")).isNull();
+    assertThat((String)cmd.getOptArg("silent")).isNull();
 
     assertThat((List<?>)cmd.getOptArgs("a")).isEmpty();
     @SuppressWarnings("unchecked")
@@ -148,10 +149,10 @@ public class ParseTest {
     assertThat(cmd.hasOpt("s")).isTrue();
     assertThat(cmd.hasOpt("silent")).isFalse();
 
-    assertThat((Object)cmd.getOptArg("a")).isNull();
-    assertThat((Object)cmd.getOptArg("alphabet")).isNull();
-    assertThat((Object)cmd.getOptArg("s")).isNull();
-    assertThat((Object)cmd.getOptArg("silent")).isNull();
+    assertThat((String)cmd.getOptArg("a")).isNull();
+    assertThat((String)cmd.getOptArg("alphabet")).isNull();
+    assertThat((String)cmd.getOptArg("s")).isNull();
+    assertThat((String)cmd.getOptArg("silent")).isNull();
 
     assertThat((List<?>)cmd.getOptArgs("a")).isEmpty();
     assertThat((List<?>)cmd.getOptArgs("alphabet")).isEmpty();
@@ -178,9 +179,9 @@ public class ParseTest {
     assertThat(cmd.hasOpt("silent")).isFalse();
 
     assertThat((String)cmd.getOptArg("a")).isEqualTo("123");
-    assertThat((Object)cmd.getOptArg("alphabet")).isNull();
-    assertThat((Object)cmd.getOptArg("s")).isNull();
-    assertThat((Object)cmd.getOptArg("silent")).isNull();
+    assertThat((String)cmd.getOptArg("alphabet")).isNull();
+    assertThat((String)cmd.getOptArg("s")).isNull();
+    assertThat((String)cmd.getOptArg("silent")).isNull();
 
     @SuppressWarnings("unchecked")
     var a = (List<String>)cmd.getOptArgs("a");
@@ -208,10 +209,10 @@ public class ParseTest {
     assertThat(cmd.hasOpt("s")).isTrue();
     assertThat(cmd.hasOpt("silent")).isFalse();
 
-    assertThat((Object)cmd.getOptArg("a")).isNull();
-    assertThat((Object)cmd.getOptArg("alphabet")).isNull();
-    assertThat((Object)cmd.getOptArg("s")).isNull();
-    assertThat((Object)cmd.getOptArg("silent")).isNull();
+    assertThat((String)cmd.getOptArg("a")).isNull();
+    assertThat((String)cmd.getOptArg("alphabet")).isNull();
+    assertThat((String)cmd.getOptArg("s")).isNull();
+    assertThat((String)cmd.getOptArg("silent")).isNull();
 
     assertThat((List<?>)cmd.getOptArgs("a")).isEmpty();
     assertThat((List<?>)cmd.getOptArgs("alphabet")).isEmpty();
@@ -238,9 +239,9 @@ public class ParseTest {
     assertThat(cmd.hasOpt("silent")).isFalse();
 
     assertThat((String)cmd.getOptArg("a")).isEqualTo("123");
-    assertThat((Object)cmd.getOptArg("alphabet")).isNull();
-    assertThat((Object)cmd.getOptArg("s")).isNull();
-    assertThat((Object)cmd.getOptArg("silent")).isNull();
+    assertThat((String)cmd.getOptArg("alphabet")).isNull();
+    assertThat((String)cmd.getOptArg("s")).isNull();
+    assertThat((String)cmd.getOptArg("silent")).isNull();
 
     @SuppressWarnings("unchecked")
     var a = (List<String>)cmd.getOptArgs("a");
@@ -349,9 +350,9 @@ public class ParseTest {
     assertThat(cmd.hasOpt("s")).isTrue();
     assertThat(cmd.hasOpt("abc%def")).isFalse();
 
-    assertThat((Object)cmd.getOptArg("a")).isNull();
-    assertThat((Object)cmd.getOptArg("s")).isNull();
-    assertThat((Object)cmd.getOptArg("abc%def")).isNull();
+    assertThat((String)cmd.getOptArg("a")).isNull();
+    assertThat((String)cmd.getOptArg("s")).isNull();
+    assertThat((String)cmd.getOptArg("abc%def")).isNull();
 
     assertThat((List<?>)cmd.getOptArgs("a")).isEmpty();
     assertThat((List<?>)cmd.getOptArgs("s")).isEmpty();
@@ -393,7 +394,7 @@ public class ParseTest {
     assertThat(cmd.getArgs()).isEmpty();
 
     assertThat(cmd.hasOpt("1abc")).isFalse();
-    assertThat((Object)cmd.getOptArg("1abc")).isNull();
+    assertThat((String)cmd.getOptArg("1abc")).isNull();
     assertThat((List<?>)cmd.getOptArgs("1abc")).isEmpty();
   }
 
@@ -432,7 +433,7 @@ public class ParseTest {
     assertThat(cmd.getArgs()).isEmpty();
 
     assertThat(cmd.hasOpt("aaa")).isFalse();
-    assertThat((Object)cmd.getOptArg("aaa")).isNull();
+    assertThat((String)cmd.getOptArg("aaa")).isNull();
     assertThat((List<?>)cmd.getOptArgs("aaa")).isEmpty();
   }
 
@@ -472,8 +473,8 @@ public class ParseTest {
     assertThat(cmd.hasOpt("s")).isTrue();
     assertThat(cmd.hasOpt("@")).isFalse();
 
-    assertThat((Object)cmd.getOptArg("s")).isNull();
-    assertThat((Object)cmd.getOptArg("@")).isNull();
+    assertThat((String)cmd.getOptArg("s")).isNull();
+    assertThat((String)cmd.getOptArg("@")).isNull();
 
     assertThat((List<?>)cmd.getOptArgs("s")).isEmpty();
     assertThat((List<?>)cmd.getOptArgs("@")).isEmpty();
@@ -491,7 +492,7 @@ public class ParseTest {
     assertThat(cmd.getArgs()).containsExactly("-s", "--", "-s@", "xxx");
 
     assertThat(cmd.hasOpt("s")).isTrue();
-    assertThat((Object)cmd.getOptArg("s")).isNull();
+    assertThat((String)cmd.getOptArg("s")).isNull();
     assertThat((List<?>)cmd.getOptArgs("s")).isEmpty();
   }
 
@@ -508,7 +509,7 @@ public class ParseTest {
     assertThat(cmd.getArgs()).containsExactly("-");
 
     assertThat(cmd.hasOpt("s")).isFalse();
-    assertThat((Object)cmd.getOptArg("s")).isNull();
+    assertThat((String)cmd.getOptArg("s")).isNull();
     assertThat((List<?>)cmd.getOptArgs("s")).isEmpty();
   }
 
@@ -531,11 +532,11 @@ public class ParseTest {
     assertThat(cmd.hasOpt("foo-bar")).isTrue();
     assertThat(cmd.hasOpt("baz")).isTrue();
 
-    assertThat((Object)cmd.getOptArg("a")).isNull();
-    assertThat((Object)cmd.getOptArg("b")).isNull();
+    assertThat((String)cmd.getOptArg("a")).isNull();
+    assertThat((String)cmd.getOptArg("b")).isNull();
     assertThat((String)cmd.getOptArg("c")).isEqualTo("3");
-    assertThat((Object)cmd.getOptArg("foo-bar")).isNull();
-    assertThat((Object)cmd.getOptArg("baz")).isNull();
+    assertThat((String)cmd.getOptArg("foo-bar")).isNull();
+    assertThat((String)cmd.getOptArg("baz")).isNull();
 
     assertThat((List<?>)cmd.getOptArgs("a")).isEmpty();
     assertThat((List<?>)cmd.getOptArgs("b")).isEmpty();

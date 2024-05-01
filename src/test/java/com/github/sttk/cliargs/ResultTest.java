@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+@SuppressWarnings("missing-explicit-ctor")
 public class ResultTest {
 
   record MyReason() {}
