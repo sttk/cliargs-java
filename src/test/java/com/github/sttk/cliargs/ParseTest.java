@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 import org.junit.jupiter.api.Test;
 
-import com.github.sttk.reasonedexception.ReasonedException;
+import com.github.sttk.exception.ReasonedException;
 import com.github.sttk.cliargs.CliArgs.OptionHasInvalidChar;
 import com.github.sttk.cliargs.CliArgs.InvalidOption;
 
@@ -319,7 +319,7 @@ public class ParseTest {
     var result = cliargs.parse();
 
     assertThat(result.exception().toString()).isEqualTo(
-      "com.github.sttk.reasonedexception.ReasonedException: " +
+      "com.github.sttk.exception.ReasonedException: " +
       "OptionHasInvalidChar{option=abc%def}"
     );
 
@@ -366,7 +366,7 @@ public class ParseTest {
     var result = cliargs.parse();
 
     assertThat(result.exception().toString()).isEqualTo(
-      "com.github.sttk.reasonedexception.ReasonedException: " +
+      "com.github.sttk.exception.ReasonedException: " +
       "OptionHasInvalidChar{option=1abc}"
     );
 
@@ -405,7 +405,7 @@ public class ParseTest {
     var result = cliargs.parse();
 
     assertThat(result.exception().toString()).isEqualTo(
-      "com.github.sttk.reasonedexception.ReasonedException: " +
+      "com.github.sttk.exception.ReasonedException: " +
       "OptionHasInvalidChar{option=-aaa=123}"
     );
 
@@ -443,7 +443,7 @@ public class ParseTest {
     var result = cliargs.parse();
 
     assertThat(result.exception().toString()).isEqualTo(
-      "com.github.sttk.reasonedexception.ReasonedException: " +
+      "com.github.sttk.exception.ReasonedException: " +
       "OptionHasInvalidChar{option=@}"
     );
 

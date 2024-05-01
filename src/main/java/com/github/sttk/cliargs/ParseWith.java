@@ -21,7 +21,7 @@ import com.github.sttk.cliargs.CliArgs.OptionTakesNoArg;
 import com.github.sttk.cliargs.CliArgs.OptionNeedsArg;
 import com.github.sttk.cliargs.CliArgs.OptionIsNotArray;
 import com.github.sttk.cliargs.CliArgs.FailToConvertOptionArg;
-import com.github.sttk.reasonedexception.ReasonedException;
+import com.github.sttk.exception.ReasonedException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.ArrayList;

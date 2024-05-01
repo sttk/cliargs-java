@@ -23,7 +23,7 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.ArrayList;
 
-import com.github.sttk.reasonedexception.ReasonedException;
+import com.github.sttk.exception.ReasonedException;
 
 /**
  * Is the class that represents an option configuration.
