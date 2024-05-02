@@ -447,7 +447,6 @@ public class OptCfg {
    *
    * @param <T> The type of the option argument value.
    */
-  @SuppressWarnings("unchecked")
   @FunctionalInterface
   public interface Postparser<T> {
     /**
