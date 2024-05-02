@@ -102,6 +102,7 @@ interface ParseWith {
     CmdArgCollector collectArgs = str -> {
       args.add(str);
     };
+
     OptArgCollector collectOpts = (name, arg) -> {
       var i = cfgMap.get(name);
       if (i == null) {
@@ -175,9 +176,10 @@ interface ParseWith {
     }
 
     for (var cfg : optCfgs) {
+      @SuppressWarnings("unchecked")
+      var list = (List<Object>)opts.get(cfg.storeKey);
+
       if (! isEmpty(cfg.defaults)) {
-        @SuppressWarnings("unchecked")
-        var list = (List<Object>)opts.get(cfg.storeKey);
         if (list == null) {
           list = new ArrayList<>();
           opts.put(cfg.storeKey, list);
@@ -186,9 +188,24 @@ interface ParseWith {
           list.addAll(cfg.defaults);
         }
       }
+
+      if (cfg.postparser != null && list != null) {
+        try {
+          postprocess(cfg, list);
+        } catch (ReasonedException e) {
+          if (exc == null) {
+            exc = e;
+          }
+        }
+      }
     }
 
     var cmd = new Cmd(cmdName, args, opts);
     return new Result(cmd, optCfgs, exc);
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  static void postprocess(OptCfg c, List<Object> l) throws ReasonedException {
+    c.postparser.process((List)l);
   }
 }

@@ -96,6 +96,12 @@ public class OptCfg {
   public final Converter<?> converter;
 
   /**
+   * Is the function interface that is executed after parsing command line
+   * arguments.
+   */
+  public final Postparser<?> postparser;
+
+  /**
    * Is the constructor that takes the all field values as parameters.
    * <p>
    * If {@code storeKey} is empty, it is set to first element of {@code names}.
@@ -120,8 +126,10 @@ public class OptCfg {
    * @param defaults  The default value(s).
    * @param desc  The description of the option.
    * @param argInHelp  The display of the option argument.
-   * @param converter  The converter to convert the option argument string to
-   *     the specified type value.
+   * @param converter  The {@link Converter} object to convert the option
+   *     argument string to the specified type value.
+   * @param postparser  The {@link Postparser} object that is executed after
+   *     parsing command line arguments.
    */
   public <T> OptCfg(
     String storeKey,
@@ -132,7 +140,8 @@ public class OptCfg {
     List<T> defaults,
     String desc,
     String argInHelp,
-    Converter<T> converter
+    Converter<T> converter,
+    Postparser<T> postparser
   ) {
     var init = new Init<T>();
     init.storeKey = storeKey;
@@ -144,6 +153,7 @@ public class OptCfg {
     init.desc = desc;
     init.argInHelp = argInHelp;
     init.converter = converter;
+    init.postparser = postparser;
 
     fillmissing(init);
 
@@ -156,6 +166,7 @@ public class OptCfg {
     this.desc = init.desc;
     this.argInHelp = init.argInHelp;
     this.converter = init.converter;
+    this.postparser = init.postparser;
   }
 
   /**
@@ -194,6 +205,7 @@ public class OptCfg {
     this.desc = init.desc;
     this.argInHelp = init.argInHelp;
     this.converter = init.converter;
+    this.postparser = init.postparser;
   }
 
   @SuppressWarnings("unchecked")
@@ -217,21 +229,22 @@ public class OptCfg {
     }
 
     if (init.type != null && init.converter == null) {
-      if (init.type.equals(Integer.class)) {
+      var type = init.type;
+      if (type.equals(int.class) || type.equals(Integer.class)) {
         init.converter = (Converter)new IntConverter();
-      } else if (init.type.equals(Double.class)) {
+      } else if (type.equals(double.class) || type.equals(Double.class)) {
         init.converter = (Converter)new DoubleConverter();
-      } else if (init.type.equals(Long.class)) {
+      } else if (type.equals(long.class) || type.equals(Long.class)) {
         init.converter = (Converter)new LongConverter();
-      } else if (init.type.equals(BigDecimal.class)) {
+      } else if (type.equals(BigDecimal.class)) {
         init.converter = (Converter)new BigDecimalConverter();
-      } else if (init.type.equals(BigInteger.class)) {
+      } else if (type.equals(BigInteger.class)) {
         init.converter = (Converter)new BigIntConverter();
-      } else if (init.type.equals(Float.class)) {
+      } else if (type.equals(float.class) || type.equals(Float.class)) {
         init.converter = (Converter)new FloatConverter();
-      } else if (init.type.equals(Short.class)) {
+      } else if (type.equals(short.class) || type.equals(Short.class)) {
         init.converter = (Converter)new ShortConverter();
-      } else if (init.type.equals(Byte.class)) {
+      } else if (type.equals(byte.class) || type.equals(Byte.class)) {
         init.converter = (Converter)new ByteConverter();
       }
     }
@@ -247,6 +260,7 @@ public class OptCfg {
     String desc;
     String argInHelp;
     Converter<T> converter;
+    Postparser<T> postparser;
   }
 
   /**
@@ -412,5 +426,36 @@ public class OptCfg {
     static <T> NamedParam<T> converter(Converter<T> converter) {
       return init -> ((Init<T>)init).converter = converter;
     }
+
+    /**
+     * Is the static method to set the {@code postparser} field like a named
+     * parameter.
+     *
+     * @param <T> The type of the option argument value.
+     *
+     * @param postparser  The value of the {@code postparser} field.
+     * @return  The {@link NamedParam} object for {@code postparser} field.
+     */
+    static <T> NamedParam<T> postparser(Postparser<T> postparser) {
+      return init -> ((Init<T>)init).postparser = postparser;
+    }
+  }
+
+  /**
+   * Is the functional interface to process option arguments after parsing
+   * command line arguments.
+   *
+   * @param <T> The type of the option argument value.
+   */
+  @SuppressWarnings("unchecked")
+  @FunctionalInterface
+  public interface Postparser<T> {
+    /**
+     * Processes the option arguments.
+     *
+     * @param optArgs  The variadic parameters of the option arguments.
+     * @throws ReasonedException  If an abnormality occurs during processing.
+     */
+    void process(List<T> optArgs) throws ReasonedException;
   }
 }

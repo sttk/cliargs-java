@@ -11,6 +11,7 @@ import static com.github.sttk.cliargs.OptCfg.NamedParam.isArray;
 import static com.github.sttk.cliargs.OptCfg.NamedParam.defaults;
 import static com.github.sttk.cliargs.OptCfg.NamedParam.type;
 import static com.github.sttk.cliargs.OptCfg.NamedParam.converter;
+import static com.github.sttk.cliargs.OptCfg.NamedParam.postparser;
 import com.github.sttk.exception.ReasonedException;
 import com.github.sttk.cliargs.CliArgs.ConfigHasDefaultsButHasNoArg;
 import com.github.sttk.cliargs.CliArgs.ConfigIsArrayButHasNoArg;
@@ -1913,6 +1914,151 @@ public class ParseWithTest {
         type(String.class),
         converter((arg, opt, key) -> {
           throw new Exception("invalid");
+        })
+      )
+    };
+
+    var args = new String[] {"--foo", "A"};
+    var cliargs = new CliArgs("app", args);
+    var result = cliargs.parseWith(cfgs);
+
+    assertThat(result.optCfgs()).isEqualTo(cfgs);
+
+    var exc = result.exception();
+    switch (exc.getReason()) {
+      case FailToConvertOptionArg r -> {
+        assertThat(r.optArg()).isEqualTo("A");
+        assertThat(r.option()).isEqualTo("foo");
+        assertThat(r.storeKey()).isEqualTo("foo");
+      }
+      default -> fail(exc);
+    }
+    switch (exc.getReason()) {
+      case InvalidOption r -> {
+        assertThat(r.option()).isEqualTo("foo");
+      }
+      default -> fail(exc);
+    }
+
+    var cmd = result.cmd();
+    assertThat(cmd.getName()).isEqualTo("app");
+    assertThat(cmd.hasOpt("foo")).isTrue();
+    assertThat((String)cmd.getOptArg("foo")).isNull();
+    assertThat((List<?>)cmd.getOptArgs("foo")).isEmpty();
+    assertThat(cmd.getArgs()).isEmpty();
+  }
+
+  @Test
+  void testParseWith_specifyPostparser() {
+    @SuppressWarnings("unchecked")
+    var cfgs = new OptCfg[]{
+      new OptCfg(
+        names("foo", "f"),
+        type(String.class),
+        isArray(true),
+        postparser(list -> {
+          var iter = list.listIterator();
+          while (iter.hasNext()) {
+            iter.set(iter.next().toUpperCase());
+          }
+        })
+      ),
+      new OptCfg(
+        names("bar", "b"),
+        type(Integer.class),
+        defaults(123),
+        postparser(list -> {
+          list.set(0, - list.get(0));
+        })
+      ),
+      new OptCfg(
+        names("baz"),
+        type(Integer.class),
+        postparser(list -> {})
+      )
+    };
+
+    var args = new String[] {"--foo", "abc", "-f", "def"};
+    var cliargs = new CliArgs("app", args);
+    var result = cliargs.parseWith(cfgs);
+
+    assertThat(result.optCfgs()).isEqualTo(cfgs);
+
+    assertThat(result.optCfgs()).isEqualTo(cfgs);
+    assertThat(result.exception()).isNull();
+
+    var cmd = result.cmd();
+    assertThat(cmd.getName()).isEqualTo("app");
+    assertThat(cmd.getArgs()).isEmpty();
+
+    assertThat(cmd.hasOpt("foo")).isTrue();
+    assertThat(cmd.hasOpt("bar")).isTrue();
+    assertThat(cmd.hasOpt("baz")).isFalse();
+
+    assertThat((String)cmd.getOptArg("foo")).isEqualTo("ABC");
+    assertThat((Integer)cmd.getOptArg("bar")).isEqualTo(-123);
+    assertThat((Integer)cmd.getOptArg("baz")).isNull();
+
+    List<String> foo = cmd.getOptArgs("foo");
+    assertThat(foo).containsExactly("ABC", "DEF");
+    List<Integer> bar = cmd.getOptArgs("bar");
+    assertThat(bar).containsExactly(-123);
+    List<Integer> baz = cmd.getOptArgs("baz");
+    assertThat(baz).isEmpty();
+
+  }
+
+  @Test
+  void testParseWith_failToProcessPostparser() {
+    record Reason() {}
+
+    @SuppressWarnings("unchecked")
+    var cfgs = new OptCfg[]{
+      new OptCfg(
+        names("foo", "f"),
+        type(String.class),
+        isArray(true),
+        postparser(l -> {
+          throw new ReasonedException(new Reason());
+        })
+      )
+    };
+
+    var args = new String[] {"--foo", "abc", "-f", "def"};
+    var cliargs = new CliArgs("app", args);
+    var result = cliargs.parseWith(cfgs);
+
+    assertThat(result.optCfgs()).isEqualTo(cfgs);
+
+    var exc = result.exception();
+    switch (exc.getReason()) {
+      case Reason r -> {}
+      default -> fail(exc);
+    }
+
+    var cmd = result.cmd();
+    assertThat(cmd.getName()).isEqualTo("app");
+    assertThat(cmd.hasOpt("foo")).isTrue();
+    assertThat((String)cmd.getOptArg("foo")).isEqualTo("abc");
+    List<String> foo = cmd.getOptArgs("foo");
+    assertThat(foo).containsExactly("abc", "def");
+    assertThat(cmd.getArgs()).isEmpty();
+  }
+
+  @Test
+  void testParseWith_failToConvertOptionArgAndFailToProcessPostparser() {
+    record Reason() {}
+
+    @SuppressWarnings("unchecked")
+    var cfgs = new OptCfg[]{
+      new OptCfg(
+        names("foo"),
+        type(String.class),
+        converter((arg, opt, key) -> {
+          throw new Exception("invalid");
+        }),
+        postparser(list -> {
+          throw new ReasonedException(new Reason());
         })
       )
     };
