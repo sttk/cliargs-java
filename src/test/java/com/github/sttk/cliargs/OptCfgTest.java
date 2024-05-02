@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import org.junit.jupiter.api.Test;
 
 import static com.github.sttk.cliargs.OptCfg.NamedParam.*;
+import static com.github.sttk.cliargs.OptCfg.Postparser;
 import com.github.sttk.cliargs.convert.ByteConverter;
 import com.github.sttk.cliargs.convert.ShortConverter;
 import com.github.sttk.cliargs.convert.IntConverter;
@@ -20,6 +21,9 @@ public class OptCfgTest {
 
   @Test
   void testNormalConstructor() {
+    var converter = new IntConverter();
+    Postparser<Integer> postparser = i -> {};
+
     var optCfg = new OptCfg(
       "FooBar",
       List.of("foo-bar", "f"),
@@ -29,7 +33,8 @@ public class OptCfgTest {
       List.of(123, 45),
       "The option description",
       "<num>",
-      new IntConverter()
+      converter,
+      postparser
     );
 
     assertThat(optCfg.storeKey).isEqualTo("FooBar");
@@ -42,7 +47,8 @@ public class OptCfgTest {
     assertThat(optCfg.defaults.get(1)).isEqualTo(45);
     assertThat(optCfg.desc).isEqualTo("The option description");
     assertThat(optCfg.argInHelp).isEqualTo("<num>");
-    assertThat(optCfg.converter).isInstanceOf(IntConverter.class);
+    assertThat(optCfg.converter).isEqualTo(converter);
+    assertThat(optCfg.postparser).isEqualTo(postparser);
   }
 
   @Test
@@ -58,6 +64,7 @@ public class OptCfgTest {
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isNull();
+    assertThat(optCfg.postparser).isNull();
   }
 
   @Test
@@ -74,6 +81,7 @@ public class OptCfgTest {
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isNull();
+    assertThat(optCfg.postparser).isNull();
   }
 
   @Test
@@ -90,6 +98,7 @@ public class OptCfgTest {
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isNull();
+    assertThat(optCfg.postparser).isNull();
   }
 
   @Test
@@ -106,6 +115,7 @@ public class OptCfgTest {
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isNull();
+    assertThat(optCfg.postparser).isNull();
   }
 
   @Test
@@ -122,6 +132,7 @@ public class OptCfgTest {
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isNull();
+    assertThat(optCfg.postparser).isNull();
   }
 
   @Test
@@ -138,6 +149,7 @@ public class OptCfgTest {
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isNull();
+    assertThat(optCfg.postparser).isNull();
   }
 
   @Test
@@ -154,6 +166,7 @@ public class OptCfgTest {
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isNull();
+    assertThat(optCfg.postparser).isNull();
   }
 
   @Test
@@ -170,6 +183,7 @@ public class OptCfgTest {
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isNull();
+    assertThat(optCfg.postparser).isNull();
   }
 
   @Test
@@ -186,10 +200,28 @@ public class OptCfgTest {
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isNull();
+    assertThat(optCfg.postparser).isNull();
   }
 
   @Test
   void testConstructor_withNamedParam_type_byte() {
+    @SuppressWarnings("unchecked")
+    var optCfg = new OptCfg(type(byte.class));
+
+    assertThat(optCfg.storeKey).isNull();
+    assertThat(optCfg.names).isEmpty();
+    assertThat(optCfg.hasArg).isTrue();
+    assertThat(optCfg.isArray).isFalse();
+    assertThat(optCfg.type).isEqualTo(byte.class);
+    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.desc).isNull();
+    assertThat(optCfg.argInHelp).isNull();
+    assertThat(optCfg.converter).isInstanceOf(ByteConverter.class);
+    assertThat(optCfg.postparser).isNull();
+  }
+
+  @Test
+  void testConstructor_withNamedParam_type_Byte() {
     @SuppressWarnings("unchecked")
     var optCfg = new OptCfg(type(Byte.class));
 
@@ -202,10 +234,28 @@ public class OptCfgTest {
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isInstanceOf(ByteConverter.class);
+    assertThat(optCfg.postparser).isNull();
   }
 
   @Test
   void testConstructor_withNamedParam_type_short() {
+    @SuppressWarnings("unchecked")
+    var optCfg = new OptCfg(type(short.class));
+
+    assertThat(optCfg.storeKey).isNull();
+    assertThat(optCfg.names).isEmpty();
+    assertThat(optCfg.hasArg).isTrue();
+    assertThat(optCfg.isArray).isFalse();
+    assertThat(optCfg.type).isEqualTo(short.class);
+    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.desc).isNull();
+    assertThat(optCfg.argInHelp).isNull();
+    assertThat(optCfg.converter).isInstanceOf(ShortConverter.class);
+    assertThat(optCfg.postparser).isNull();
+  }
+
+  @Test
+  void testConstructor_withNamedParam_type_Short() {
     @SuppressWarnings("unchecked")
     var optCfg = new OptCfg(type(Short.class));
 
@@ -218,10 +268,28 @@ public class OptCfgTest {
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isInstanceOf(ShortConverter.class);
+    assertThat(optCfg.postparser).isNull();
   }
 
   @Test
   void testConstructor_withNamedParam_type_int() {
+    @SuppressWarnings("unchecked")
+    var optCfg = new OptCfg(type(int.class));
+
+    assertThat(optCfg.storeKey).isNull();
+    assertThat(optCfg.names).isEmpty();
+    assertThat(optCfg.hasArg).isTrue();
+    assertThat(optCfg.isArray).isFalse();
+    assertThat(optCfg.type).isEqualTo(int.class);
+    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.desc).isNull();
+    assertThat(optCfg.argInHelp).isNull();
+    assertThat(optCfg.converter).isInstanceOf(IntConverter.class);
+    assertThat(optCfg.postparser).isNull();
+  }
+
+  @Test
+  void testConstructor_withNamedParam_type_Integer() {
     @SuppressWarnings("unchecked")
     var optCfg = new OptCfg(type(Integer.class));
 
@@ -234,10 +302,28 @@ public class OptCfgTest {
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isInstanceOf(IntConverter.class);
+    assertThat(optCfg.postparser).isNull();
   }
 
   @Test
   void testConstructor_withNamedParam_type_long() {
+    @SuppressWarnings("unchecked")
+    var optCfg = new OptCfg(type(long.class));
+
+    assertThat(optCfg.storeKey).isNull();
+    assertThat(optCfg.names).isEmpty();
+    assertThat(optCfg.hasArg).isTrue();
+    assertThat(optCfg.isArray).isFalse();
+    assertThat(optCfg.type).isEqualTo(long.class);
+    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.desc).isNull();
+    assertThat(optCfg.argInHelp).isNull();
+    assertThat(optCfg.converter).isInstanceOf(LongConverter.class);
+    assertThat(optCfg.postparser).isNull();
+  }
+
+  @Test
+  void testConstructor_withNamedParam_type_Long() {
     @SuppressWarnings("unchecked")
     var optCfg = new OptCfg(type(Long.class));
 
@@ -250,10 +336,28 @@ public class OptCfgTest {
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isInstanceOf(LongConverter.class);
+    assertThat(optCfg.postparser).isNull();
   }
 
   @Test
   void testConstructor_withNamedParam_type_float() {
+    @SuppressWarnings("unchecked")
+    var optCfg = new OptCfg(type(float.class));
+
+    assertThat(optCfg.storeKey).isNull();
+    assertThat(optCfg.names).isEmpty();
+    assertThat(optCfg.hasArg).isTrue();
+    assertThat(optCfg.isArray).isFalse();
+    assertThat(optCfg.type).isEqualTo(float.class);
+    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.desc).isNull();
+    assertThat(optCfg.argInHelp).isNull();
+    assertThat(optCfg.converter).isInstanceOf(FloatConverter.class);
+    assertThat(optCfg.postparser).isNull();
+  }
+
+  @Test
+  void testConstructor_withNamedParam_type_Float() {
     @SuppressWarnings("unchecked")
     var optCfg = new OptCfg(type(Float.class));
 
@@ -266,10 +370,28 @@ public class OptCfgTest {
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isInstanceOf(FloatConverter.class);
+    assertThat(optCfg.postparser).isNull();
   }
 
   @Test
   void testConstructor_withNamedParam_type_double() {
+    @SuppressWarnings("unchecked")
+    var optCfg = new OptCfg(type(double.class));
+
+    assertThat(optCfg.storeKey).isNull();
+    assertThat(optCfg.names).isEmpty();
+    assertThat(optCfg.hasArg).isTrue();
+    assertThat(optCfg.isArray).isFalse();
+    assertThat(optCfg.type).isEqualTo(double.class);
+    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.desc).isNull();
+    assertThat(optCfg.argInHelp).isNull();
+    assertThat(optCfg.converter).isInstanceOf(DoubleConverter.class);
+    assertThat(optCfg.postparser).isNull();
+  }
+
+  @Test
+  void testConstructor_withNamedParam_type_Double() {
     @SuppressWarnings("unchecked")
     var optCfg = new OptCfg(type(Double.class));
 
@@ -282,6 +404,58 @@ public class OptCfgTest {
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isInstanceOf(DoubleConverter.class);
+    assertThat(optCfg.postparser).isNull();
+  }
+
+  @Test
+  void testConstructor_withNamedParam_type_boolean() {
+    @SuppressWarnings("unchecked")
+    var optCfg = new OptCfg(type(boolean.class));
+
+    assertThat(optCfg.storeKey).isNull();
+    assertThat(optCfg.names).isEmpty();
+    assertThat(optCfg.hasArg).isTrue();
+    assertThat(optCfg.isArray).isFalse();
+    assertThat(optCfg.type).isEqualTo(boolean.class);
+    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.desc).isNull();
+    assertThat(optCfg.argInHelp).isNull();
+    assertThat(optCfg.converter).isNull();
+    assertThat(optCfg.postparser).isNull();
+  }
+
+  @Test
+  void testConstructor_withNamedParam_type_Boolean() {
+    @SuppressWarnings("unchecked")
+    var optCfg = new OptCfg(type(Boolean.class));
+
+    assertThat(optCfg.storeKey).isNull();
+    assertThat(optCfg.names).isEmpty();
+    assertThat(optCfg.hasArg).isTrue();
+    assertThat(optCfg.isArray).isFalse();
+    assertThat(optCfg.type).isEqualTo(Boolean.class);
+    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.desc).isNull();
+    assertThat(optCfg.argInHelp).isNull();
+    assertThat(optCfg.converter).isNull();
+    assertThat(optCfg.postparser).isNull();
+  }
+
+  @Test
+  void testConstructor_withNamedParam_type_String() {
+    @SuppressWarnings("unchecked")
+    var optCfg = new OptCfg(type(String.class));
+
+    assertThat(optCfg.storeKey).isNull();
+    assertThat(optCfg.names).isEmpty();
+    assertThat(optCfg.hasArg).isTrue();
+    assertThat(optCfg.isArray).isFalse();
+    assertThat(optCfg.type).isEqualTo(String.class);
+    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.desc).isNull();
+    assertThat(optCfg.argInHelp).isNull();
+    assertThat(optCfg.converter).isNull();
+    assertThat(optCfg.postparser).isNull();
   }
 
   @Test
@@ -298,6 +472,7 @@ public class OptCfgTest {
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isNull();
+    assertThat(optCfg.postparser).isNull();
   }
 
   @Test
@@ -316,6 +491,7 @@ public class OptCfgTest {
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isNull();
+    assertThat(optCfg.postparser).isNull();
   }
 
   @Test
@@ -334,6 +510,7 @@ public class OptCfgTest {
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isNull();
+    assertThat(optCfg.postparser).isNull();
   }
 
   @Test
@@ -350,6 +527,7 @@ public class OptCfgTest {
     assertThat(optCfg.desc).isEqualTo("option desc");
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isNull();
+    assertThat(optCfg.postparser).isNull();
   }
 
   @Test
@@ -366,20 +544,63 @@ public class OptCfgTest {
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isEqualTo("<num>");
     assertThat(optCfg.converter).isNull();
+    assertThat(optCfg.postparser).isNull();
+  }
+
+  @Test
+  void testConstructor_withNamedParam_converter() {
+    var c = new LongConverter();
+
+    @SuppressWarnings("unchecked")
+    var optCfg = new OptCfg(converter(c));
+
+    assertThat(optCfg.storeKey).isNull();
+    assertThat(optCfg.names).isEmpty();
+    assertThat(optCfg.hasArg).isFalse();
+    assertThat(optCfg.isArray).isFalse();
+    assertThat(optCfg.type).isNull();
+    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.desc).isNull();
+    assertThat(optCfg.argInHelp).isNull();
+    assertThat(optCfg.converter).isEqualTo(c);
+    assertThat(optCfg.postparser).isNull();
+  }
+
+  @Test
+  void testConstructor_withNamedParam_postparser() {
+    Postparser<String> p = s -> {};
+
+    @SuppressWarnings("unchecked")
+    var optCfg = new OptCfg(postparser(p));
+
+    assertThat(optCfg.storeKey).isNull();
+    assertThat(optCfg.names).isEmpty();
+    assertThat(optCfg.hasArg).isFalse();
+    assertThat(optCfg.isArray).isFalse();
+    assertThat(optCfg.type).isNull();
+    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.desc).isNull();
+    assertThat(optCfg.argInHelp).isNull();
+    assertThat(optCfg.converter).isNull();
+    assertThat(optCfg.postparser).isEqualTo(p);
   }
 
   @Test
   void testConstructor_withNamedParam_full() {
+    var c = new IntConverter();
+    Postparser<Integer> p = i -> {};
+
     @SuppressWarnings("unchecked")
     var optCfg = new OptCfg(
       desc("The option description"),
       isArray(true),
       names("foo-bar", "f"),
       storeKey("FooBar"),
-      converter(new IntConverter()),
+      converter(c),
+      postparser(p),
       hasArg(true),
       argInHelp("<num>"),
-      type(Integer.class),
+      type(int.class),
       defaults(123, 45)
     );
 
@@ -387,12 +608,13 @@ public class OptCfgTest {
     assertThat(optCfg.names).containsExactly("foo-bar", "f");
     assertThat(optCfg.hasArg).isTrue();
     assertThat(optCfg.isArray).isTrue();
-    assertThat(optCfg.type).isEqualTo(Integer.class);
+    assertThat(optCfg.type).isEqualTo(int.class);
     assertThat(optCfg.defaults).hasSize(2);
     assertThat(optCfg.defaults.get(0)).isEqualTo(123);
     assertThat(optCfg.defaults.get(1)).isEqualTo(45);
     assertThat(optCfg.desc).isEqualTo("The option description");
     assertThat(optCfg.argInHelp).isEqualTo("<num>");
-    assertThat(optCfg.converter).isInstanceOf(IntConverter.class);
+    assertThat(optCfg.converter).isEqualTo(c);
+    assertThat(optCfg.postparser).isEqualTo(p);
   }
 }

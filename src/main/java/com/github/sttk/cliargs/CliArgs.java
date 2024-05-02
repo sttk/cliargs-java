@@ -194,9 +194,6 @@ public class CliArgs {
    * <p>
    * This method basically allows only options declared in option
    * configurations.
-   * An option configuration has fields: {@code storeKey}, {@code names},
-   * {@code hasArg}, {@code isArray}, {@code type}, {@code defaults},
-   * {@code desc}, {@code argInHelp}, and {@code converter}.
    * When an option in command line arguments matches one of the {@code names}
    * in an option configuration, the option is registered into {@code Cmd} with
    * {@code storeKey}.
@@ -212,6 +209,8 @@ public class CliArgs {
    * converted with the {@code converter}.
    * If {@code type} is specified but {@code converter} is not specified,
    * a converter which converts a string to the specified type value is set.
+   * If {@code postparser} is specified, it processes option arguments
+   * (including those set from default values) after parsing.
    * <p>
    * If options not declared in option configurations are given in command line
    * arguments, this method basically throws a {@link ReasonedException} with
