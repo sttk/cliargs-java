@@ -5,7 +5,12 @@
  */
 package com.github.sttk.cliargs;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
+
+import com.github.sttk.cliargs.annotation.Opt;
 import com.github.sttk.exception.ReasonedException;
+import java.nio.file.Path;
 import java.util.List;
 
 /**
@@ -141,6 +146,40 @@ public class CliArgs {
    */
   public record OptionNameIsDuplicated(String storeKey, String option) {}
 
+  /**
+   * Is the exception reason which indicates that default value(s) defined in
+   * {@link Opt} annotation is failed to convert to the specified type value.
+   *
+   * @param storeKey  A store key.
+   * @param optArg  An option argument to be converted.
+   */
+  public record FailToConvertDefaultsInOptAnnotation(
+    String storeKey, String optArg
+  ) {}
+
+  /**
+   * Is the exception reason which indicates that a type of a field of the
+   * option store is neither a boolean, a number, a string, or an array of
+   * numbers or strings.
+   *
+   * @param type  The field type of the option store object.
+   * @param field  The field name of the option store object.
+   */
+  public record IllegalOptionType(Class<?> type, String field) {}
+
+  /**
+   * Is the exception reason which indicates that it is failed to set option
+   * arguments (including those from default values) to a field of an option
+   * store.
+   *
+   * @param field  The field name of the option store object.
+   * @param type  The field type of the option store object.
+   * @param optArgs  The option arguments.
+   */
+  public record FailToSetOptionStoreField(
+    String field, Class<?> type, List<?> optArgs
+  ) {}
+
   ///
 
   /** The command name. */
@@ -233,5 +272,83 @@ public class CliArgs {
    */
   public Result parseWith(OptCfg[] optCfgs) {
     return ParseWith.parse(optCfgs, this.cmd, this.args);
+  }
+
+  /**
+   * Parses command line arguments and sets their values to the option store
+   * which is the second argument of this method.
+   * This method divides command line arguments to command arguments and
+   * options, then sets the options to the option store, and returns the
+   * command arguments with the generated option configurations.
+   * <p>
+   * The configurations of options are determined by types and annotations of
+   * fields of the option store.
+   * If the type is a boolean, the option takes no argument.
+   * If the type is a number or a string, the option can takes single option
+   * argument, therefore it can appear once in command line arguments.
+   * If the type is an array, the option can takes multiple option arguments,
+   * therefore it can appear multiple times in command line arguments.
+   * <p>
+   * The annotation type is @{@link Opt} and it can have annotation elements:
+   * {@code cfg}, {@code desc}, and {@code arg}.
+   * The {@code cfg} element can be specified names and default values(s) of
+   * an option.
+   * It has a special format like {@code cfg="foo-bar,f=123"}.
+   * The first part of the element value is option names, which are separated
+   * by commas, and ends with {@code "="} mark or end of string.
+   * If the option name is empty or no {@code cfg} element value, the option's
+   * name becomes same with the field name of the option store.
+   * <p>
+   * The string after the {@code "="} mark is default value(s).
+   * If the type of the option is a boolean, the string after {@code "="} mark
+   * is ignored because a boolean option takes no option argument.
+   * If the type of the option is a number or a string, the whole string after
+   * {@code "="} mark is default value(s).
+   * If the type of the option is an array, the string after {@code "="} mark
+   * have to be rounded by square brackets and separate the elements with
+   * commas, like {@code [elem1,elem2,elem3]}.
+   * The element separator can be used other than a comma by putting the
+   * separator chracter before the open square bracket, like
+   * {@code :[elem1:elem2:elem3]}.
+   * It's useful when some array elements include commas.
+   * <p>
+   * <b>NOTE:</b> A default value of an empty array in {@code cfg} annotation
+   * element is {@code []}, like {@code cfg="name=[]"}, it doesn't
+   * represent an array which contains only one empty string.
+   * If you want to specify an array which contains only one empty string,
+   * write nothing after "=" mark, like {@code cfg="name="}.
+   *
+   * @param options  An option store object.
+   * @return A {@link Result} object that contains the parsed result.
+   */
+  public Result parseFor(Object options) {
+    OptCfg[] cfgs;
+    try {
+      cfgs = ParseFor.makeOptCfgsFor(options);
+    } catch (ReasonedException e) {
+      var cmdName = Path.of(this.cmd).getFileName().toString();
+      var cmd = new Cmd(cmdName, emptyList(), emptyMap());
+      return new Result(cmd, null, e);
+    }
+
+    return ParseWith.parse(cfgs, this.cmd, this.args);
+  }
+
+  /**
+   * Makes an {@link OptCfg} array from the fields of the option store with the
+   * annnotation @{@link Opt}.
+   * <p>
+   * About the process for {@link OptCfg} using {@link Opt} annotation, see
+   * the comment of {@link parseFor} method.
+   *
+   * @param options  An option store object.
+   * @return An {@link OptCfg} array.
+   * @throws ReasonedException  If it is failed to create OptCfg objects from
+   *     the fields of the option store object.
+   */
+  public static OptCfg[] makeOptCfgsFor(
+    Object options
+  ) throws ReasonedException {
+    return ParseFor.makeOptCfgsFor(options);
   }
 }
