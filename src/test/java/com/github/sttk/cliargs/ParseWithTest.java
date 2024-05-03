@@ -15,6 +15,7 @@ import static com.github.sttk.cliargs.OptCfg.NamedParam.postparser;
 import com.github.sttk.exception.ReasonedException;
 import com.github.sttk.cliargs.CliArgs.ConfigHasDefaultsButHasNoArg;
 import com.github.sttk.cliargs.CliArgs.ConfigIsArrayButHasNoArg;
+import com.github.sttk.cliargs.CliArgs.ConfigIsNotArrayButDefaultsIsArray;
 import com.github.sttk.cliargs.CliArgs.FailToConvertOptionArg;
 import com.github.sttk.cliargs.CliArgs.StoreKeyIsDuplicated;
 import com.github.sttk.cliargs.CliArgs.UnconfiguredOption;
@@ -874,6 +875,72 @@ public class ParseWithTest {
     assertThat(exc).isNotNull();
     switch (exc.getReason()) {
       case ConfigIsArrayButHasNoArg r -> {
+        assertThat(r.storeKey()).isEqualTo("foo-bar");
+      }
+      default -> fail(exc);
+    }
+
+    var cmd = result.cmd();
+    assertThat(cmd.getName()).isEqualTo("app");
+    assertThat(cmd.hasOpt("foo-bar")).isFalse();
+    assertThat((String)cmd.getOptArg("foo-bar")).isNull();
+    assertThat((List<?>)cmd.getOptArgs("foo-bar")).isEmpty();
+    assertThat(cmd.hasOpt("f")).isFalse();
+    assertThat((String)cmd.getOptArg("f")).isNull();
+    assertThat((List<?>)cmd.getOptArgs("f")).isEmpty();
+    assertThat(cmd.getArgs()).isEmpty();
+  }
+
+  @Test
+  void testParseWith_oneCfgIsNotArrayButHasDefaultsIsEmpty() {
+    @SuppressWarnings("unchecked")
+    var cfgs = new OptCfg[]{
+      new OptCfg(names("foo-bar"), hasArg(true), defaults())
+    };
+
+    var args = new String[]{"--foo-bar", "ABC"};
+    var cliargs = new CliArgs("app", args);
+    var result = cliargs.parseWith(cfgs);
+
+    assertThat(result.optCfgs()).isEqualTo(cfgs);
+
+    var exc = result.exception();
+    assertThat(exc).isNotNull();
+    switch (exc.getReason()) {
+      case ConfigIsNotArrayButDefaultsIsArray r -> {
+        assertThat(r.storeKey()).isEqualTo("foo-bar");
+      }
+      default -> fail(exc);
+    }
+
+    var cmd = result.cmd();
+    assertThat(cmd.getName()).isEqualTo("app");
+    assertThat(cmd.hasOpt("foo-bar")).isFalse();
+    assertThat((String)cmd.getOptArg("foo-bar")).isNull();
+    assertThat((List<?>)cmd.getOptArgs("foo-bar")).isEmpty();
+    assertThat(cmd.hasOpt("f")).isFalse();
+    assertThat((String)cmd.getOptArg("f")).isNull();
+    assertThat((List<?>)cmd.getOptArgs("f")).isEmpty();
+    assertThat(cmd.getArgs()).isEmpty();
+  }
+
+  @Test
+  void testParseWith_oneCfgIsNotArrayButHasArrayDefaultsIsMultiple() {
+    @SuppressWarnings("unchecked")
+    var cfgs = new OptCfg[]{
+      new OptCfg(names("foo-bar"), hasArg(true), defaults(1, 2))
+    };
+
+    var args = new String[]{"--foo-bar", "ABC"};
+    var cliargs = new CliArgs("app", args);
+    var result = cliargs.parseWith(cfgs);
+
+    assertThat(result.optCfgs()).isEqualTo(cfgs);
+
+    var exc = result.exception();
+    assertThat(exc).isNotNull();
+    switch (exc.getReason()) {
+      case ConfigIsNotArrayButDefaultsIsArray r -> {
         assertThat(r.storeKey()).isEqualTo("foo-bar");
       }
       default -> fail(exc);

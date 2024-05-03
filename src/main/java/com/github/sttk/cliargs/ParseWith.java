@@ -162,8 +162,8 @@ interface ParseWith {
         list = new ArrayList<>();
         opts.put(storeKey, list);
       }
-      if (cfg.converter != null) {
-        if (cfg.hasArg) {
+      if (cfg.hasArg) {
+        if (cfg.converter != null) {
           try {
             list.add(cfg.converter.convert(arg, name, storeKey));
           } catch (ReasonedException e) {
@@ -172,9 +172,7 @@ interface ParseWith {
             var reason = new FailToConvertOptionArg(arg, name, storeKey);
             throw new ReasonedException(reason, e);
           }
-        }
-      } else {
-        if (cfg.hasArg) {
+        } else {
           list.add(arg);
         }
       }
