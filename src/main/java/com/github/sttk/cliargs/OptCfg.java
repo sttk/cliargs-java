@@ -22,7 +22,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.ArrayList;
-
 import com.github.sttk.exception.ReasonedException;
 
 /**
@@ -145,11 +144,11 @@ public class OptCfg {
   ) {
     var init = new Init<T>();
     init.storeKey = storeKey;
-    init.names = unmodifiableList(names);
+    init.names = names;
     init.hasArg = hasArg;
     init.isArray = isArray;
     init.type = type;
-    init.defaults = unmodifiableList(defaults);
+    init.defaults = defaults;
     init.desc = desc;
     init.argInHelp = argInHelp;
     init.converter = converter;
@@ -162,7 +161,8 @@ public class OptCfg {
     this.hasArg = init.hasArg;
     this.isArray = init.isArray;
     this.type = init.type;
-    this.defaults = unmodifiableList(init.defaults);
+    this.defaults = (init.defaults == null) ? null :
+      unmodifiableList(init.defaults);
     this.desc = init.desc;
     this.argInHelp = init.argInHelp;
     this.converter = init.converter;
@@ -201,14 +201,14 @@ public class OptCfg {
     this.hasArg = init.hasArg;
     this.isArray = init.isArray;
     this.type = init.type;
-    this.defaults = unmodifiableList(init.defaults);
+    this.defaults = (init.defaults == null) ? null :
+      unmodifiableList(init.defaults);
     this.desc = init.desc;
     this.argInHelp = init.argInHelp;
     this.converter = init.converter;
     this.postparser = init.postparser;
   }
 
-  @SuppressWarnings("unchecked")
   private void fillmissing(Init<?> init) {
     if (isEmpty(init.storeKey)) {
       if (! isEmpty(init.names)) {
@@ -224,38 +224,65 @@ public class OptCfg {
       }
     }
 
+    if (init.names == null) {
+      init.names = emptyList();
+    }
+
     if (init.type != null && ! init.hasArg) {
-      init.hasArg = true;
+      if (init.type != boolean.class && init.type != Boolean.class) {
+        init.hasArg = true;
+      }
     }
 
     if (init.type != null && init.converter == null) {
-      var type = init.type;
-      if (type.equals(int.class) || type.equals(Integer.class)) {
-        init.converter = (Converter)new IntConverter();
-      } else if (type.equals(double.class) || type.equals(Double.class)) {
-        init.converter = (Converter)new DoubleConverter();
-      } else if (type.equals(long.class) || type.equals(Long.class)) {
-        init.converter = (Converter)new LongConverter();
-      } else if (type.equals(BigDecimal.class)) {
-        init.converter = (Converter)new BigDecimalConverter();
-      } else if (type.equals(BigInteger.class)) {
-        init.converter = (Converter)new BigIntConverter();
-      } else if (type.equals(float.class) || type.equals(Float.class)) {
-        init.converter = (Converter)new FloatConverter();
-      } else if (type.equals(short.class) || type.equals(Short.class)) {
-        init.converter = (Converter)new ShortConverter();
-      } else if (type.equals(byte.class) || type.equals(Byte.class)) {
-        init.converter = (Converter)new ByteConverter();
+      var converter = findConverter(init.type);
+      if (converter != null) {
+        setInitConverter(init, converter);
       }
     }
   }
 
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  private void setInitConverter(Init init, Converter<?> converter) {
+    init.converter = (Converter) converter;
+  }
+
+  @SuppressWarnings("unchecked")
+  static <T> Converter<T> findConverter(Class<T> type) {
+    if (type.equals(int.class) || type.equals(Integer.class)) {
+      var c = (Converter<T>) new IntConverter();
+      return c;
+    } else if (type.equals(double.class) || type.equals(Double.class)) {
+      var c = (Converter<T>) new DoubleConverter();
+      return c;
+    } else if (type.equals(long.class) || type.equals(Long.class)) {
+      var c = (Converter<T>) new LongConverter();
+      return c;
+    } else if (type.equals(BigDecimal.class)) {
+      var c = (Converter<T>) new BigDecimalConverter();
+      return c;
+    } else if (type.equals(BigInteger.class)) {
+      var c = (Converter<T>) new BigIntConverter();
+      return c;
+    } else if (type.equals(float.class) || type.equals(Float.class)) {
+      var c = (Converter<T>) new FloatConverter();
+      return c;
+    } else if (type.equals(short.class) || type.equals(Short.class)) {
+      var c = (Converter<T>) new ShortConverter();
+      return c;
+    } else if (type.equals(byte.class) || type.equals(Byte.class)) {
+      var c = (Converter<T>) new ByteConverter();
+      return c;
+    }
+    return null;
+  }
+
   private static class Init<T> {
     String storeKey;
-    List<String> names = emptyList();
+    List<String> names;
     boolean hasArg;
     boolean isArray;
-    List<T> defaults = emptyList();
+    List<T> defaults;
     Class<T> type;
     String desc;
     String argInHelp;

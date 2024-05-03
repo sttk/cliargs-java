@@ -105,12 +105,21 @@ public class CliArgs {
 
   /**
    * Is the exception reason which indicates that an option configuration
-   * contradicts that the option must be an array ({@code .isArray == true})
+   * contradicts that the option is an array ({@code .isArray == true})
    * though it has no option argument ({@code .hasArg == false}).
    *
    * @param storeKey  A store key.
    */
   public record ConfigIsArrayButHasNoArg(String storeKey) {}
+
+  /**
+   * Is the exception reason which indicates that an option configuration
+   * contradicts that the option is not an array ({@code .isArray == false})
+   * but default value ({@code .defaults} is an array.
+   *
+   * @param storeKey  A store key.
+   */
+  public record ConfigIsNotArrayButDefaultsIsArray(String storeKey) {}
 
   /**
    * Is the exception reason which indicates that an opiton configuration
@@ -219,7 +228,7 @@ public class CliArgs {
    * of which {@code storeKey} or the first element of {@code names} is
    * {@code "*"}.
    *
-   * @param optCfgs  An array of {@code OptCfg} objects.
+   * @param optCfgs  An array of {@link OptCfg} objects.
    * @return  A {@link Result} object that contains the parsed result.
    */
   public Result parseWith(OptCfg[] optCfgs) {

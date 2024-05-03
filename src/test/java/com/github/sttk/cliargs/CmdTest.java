@@ -25,12 +25,9 @@ public class CmdTest {
     assertThat(cmd.getName()).isEqualTo("foo");
     assertThat(cmd.getArgs()).containsExactly("a0", "a1", "a2");
 
-    @SuppressWarnings("unchecked")
-    var o0 = (List<Integer>) cmd.getOptArgs("o0");
-    @SuppressWarnings("unchecked")
-    var o1 = (List<?>) cmd.getOptArgs("o1");
-    @SuppressWarnings("unchecked")
-    var o2 = (List<?>) cmd.getOptArgs("o2");
+    List<Integer> o0 = cmd.getOptArgs("o0");
+    List<?> o1 = cmd.getOptArgs("o1");
+    List<?> o2 = cmd.getOptArgs("o2");
     assertThat(o0).containsExactly(123, 456);
     assertThat(o1).isEmpty();
     assertThat(o2).isEmpty();
@@ -60,12 +57,9 @@ public class CmdTest {
 
     var cmd = new Cmd("foo", args, opts);
 
-    @SuppressWarnings("unchecked")
-    var o0 = (Integer) cmd.getOptArg("o0");
-    @SuppressWarnings("unchecked")
-    var o1 = (Integer) cmd.getOptArg("o1");
-    @SuppressWarnings("unchecked")
-    var o2 = (Integer) cmd.getOptArg("o2");
+    Integer o0 = cmd.getOptArg("o0");
+    Integer o1 = cmd.getOptArg("o1");
+    Integer o2 = cmd.getOptArg("o2");
     assertThat(o0).isEqualTo(123);
     assertThat(o1).isNull();
     assertThat(o2).isNull();
@@ -81,18 +75,16 @@ public class CmdTest {
 
     var cmd = new Cmd("foo", args, opts);
 
-    @SuppressWarnings("unchecked")
-    var o0 = (List<Integer>) cmd.getOptArgs("o0");
-    @SuppressWarnings("unchecked")
-    var o1 = (List<String>) cmd.getOptArgs("o1");
-    @SuppressWarnings("unchecked")
-    var o2 = (List<Object>) cmd.getOptArgs("o2");
+    List<Integer> o0 = cmd.getOptArgs("o0");
+    List<String> o1 = cmd.getOptArgs("o1");
+    List<Object> o2 = cmd.getOptArgs("o2");
     assertThat(o0).containsExactly(123, 456);
     assertThat(o1).isEmpty();
     assertThat(o2).isEmpty();
 
     try {
       o0.add(789);
+      fail();
     } catch (UnsupportedOperationException e) {}
   }
 
@@ -106,12 +98,9 @@ public class CmdTest {
 
     var cmd = new Cmd("foo", args, opts);
 
-    @SuppressWarnings("unchecked")
-    var o0 = (List<Integer>) cmd.getOptArgs("o0");
-    @SuppressWarnings("unchecked")
-    var o1 = (List<String>) cmd.getOptArgs("o1");
-    @SuppressWarnings("unchecked")
-    var o2 = (List<Object>) cmd.getOptArgs("o2");
+    List<Integer> o0 = cmd.getOptArgs("o0");
+    List<String> o1 = cmd.getOptArgs("o1");
+    List<Object> o2 = cmd.getOptArgs("o2");
     assertThat(o0).containsExactly(123, 456);
     assertThat(o1).isEmpty();
     assertThat(o2).isEmpty();
@@ -119,6 +108,7 @@ public class CmdTest {
     var a = cmd.getArgs();
     try {
       a.add("xxx");
+      fail();
     } catch (UnsupportedOperationException e) {}
   }
 }

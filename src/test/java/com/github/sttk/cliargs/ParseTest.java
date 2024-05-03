@@ -124,8 +124,7 @@ public class ParseTest {
     assertThat((String)cmd.getOptArg("silent")).isNull();
 
     assertThat((List<?>)cmd.getOptArgs("a")).isEmpty();
-    @SuppressWarnings("unchecked")
-    var alphabet = (List<String>)cmd.getOptArgs("alphabet");
+    List<String> alphabet = cmd.getOptArgs("alphabet");
     assertThat(alphabet).containsExactly("ABC");
     assertThat((List<?>)cmd.getOptArgs("s")).isEmpty();
     assertThat((List<?>)cmd.getOptArgs("silent")).isEmpty();
@@ -183,8 +182,7 @@ public class ParseTest {
     assertThat((String)cmd.getOptArg("s")).isNull();
     assertThat((String)cmd.getOptArg("silent")).isNull();
 
-    @SuppressWarnings("unchecked")
-    var a = (List<String>)cmd.getOptArgs("a");
+    List<String> a = cmd.getOptArgs("a");
     assertThat(a).containsExactly("123");
     assertThat((List<?>)cmd.getOptArgs("alphabet")).isEmpty();
     assertThat((List<?>)cmd.getOptArgs("s")).isEmpty();
@@ -243,8 +241,7 @@ public class ParseTest {
     assertThat((String)cmd.getOptArg("s")).isNull();
     assertThat((String)cmd.getOptArg("silent")).isNull();
 
-    @SuppressWarnings("unchecked")
-    var a = (List<String>)cmd.getOptArgs("a");
+    List<String> a = cmd.getOptArgs("a");
     assertThat(a).containsExactly("123");
     assertThat((List<?>)cmd.getOptArgs("alphabet")).isEmpty();
     assertThat((List<?>)cmd.getOptArgs("s")).isEmpty();
@@ -266,8 +263,7 @@ public class ParseTest {
 
     assertThat(cmd.hasOpt("aaa-bbb-ccc")).isTrue();
     assertThat((String)cmd.getOptArg("aaa-bbb-ccc")).isEqualTo("123");
-    @SuppressWarnings("unchecked")
-    var aaaBbbCcc = (List<String>)cmd.getOptArgs("aaa-bbb-ccc");
+    List<String> aaaBbbCcc = cmd.getOptArgs("aaa-bbb-ccc");
     assertThat(aaaBbbCcc).containsExactly("123");
   }
 
@@ -287,8 +283,7 @@ public class ParseTest {
     assertThat(cmd.hasOpt("a")).isTrue();
     assertThat((String)cmd.getOptArg("a")).isEqualTo("b=c");
 
-    @SuppressWarnings("unchecked")
-    var a = (List<String>)cmd.getOptArgs("a");
+    List<String> a = cmd.getOptArgs("a");
     assertThat(a).containsExactly("b=c");
   }
 
@@ -307,8 +302,7 @@ public class ParseTest {
 
     assertThat(cmd.hasOpt("a")).isTrue();
     assertThat((String)cmd.getOptArg("a")).isEqualTo("1,2-3");
-    @SuppressWarnings("unchecked")
-    var a = (List<String>)cmd.getOptArgs("a");
+    List<String> a = cmd.getOptArgs("a");
     assertThat(a).containsExactly("1,2-3");
   }
 
@@ -540,8 +534,7 @@ public class ParseTest {
 
     assertThat((List<?>)cmd.getOptArgs("a")).isEmpty();
     assertThat((List<?>)cmd.getOptArgs("b")).isEmpty();
-    @SuppressWarnings("unchecked")
-    var c = (List<String>)cmd.getOptArgs("c");
+    List<String> c = cmd.getOptArgs("c");
     assertThat(c).containsExactly("3", "4");
     assertThat((List<?>)cmd.getOptArgs("foo-bar")).isEmpty();
     assertThat((List<?>)cmd.getOptArgs("baz")).isEmpty();
