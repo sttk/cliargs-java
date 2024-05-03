@@ -20,7 +20,7 @@ import java.time.OffsetDateTime;
 public class OptCfgTest {
 
   @Test
-  void testNormalConstructor() {
+  void testNormalConstructor_full() {
     var converter = new IntConverter();
     Postparser<Integer> postparser = i -> {};
 
@@ -52,6 +52,36 @@ public class OptCfgTest {
   }
 
   @Test
+  void testNormalConstructor_null() {
+    var converter = new IntConverter();
+    Postparser<Integer> postparser = i -> {};
+
+    var optCfg = new OptCfg(
+      null,
+      null,
+      false,
+      false,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    );
+
+    assertThat(optCfg.storeKey).isNull();
+    assertThat(optCfg.names).isEmpty();
+    assertThat(optCfg.hasArg).isFalse();
+    assertThat(optCfg.isArray).isFalse();
+    assertThat(optCfg.type).isNull();
+    assertThat(optCfg.defaults).isNull();
+    assertThat(optCfg.desc).isNull();
+    assertThat(optCfg.argInHelp).isNull();
+    assertThat(optCfg.converter).isNull();
+    assertThat(optCfg.postparser).isNull();
+  }
+
+  @Test
   void testConstructor_withNoNamedParam() {
     var optCfg = new OptCfg();
 
@@ -60,7 +90,7 @@ public class OptCfgTest {
     assertThat(optCfg.hasArg).isFalse();
     assertThat(optCfg.isArray).isFalse();
     assertThat(optCfg.type).isNull();
-    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.defaults).isNull();
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isNull();
@@ -77,7 +107,7 @@ public class OptCfgTest {
     assertThat(optCfg.hasArg).isFalse();
     assertThat(optCfg.isArray).isFalse();
     assertThat(optCfg.type).isNull();
-    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.defaults).isNull();
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isNull();
@@ -94,7 +124,7 @@ public class OptCfgTest {
     assertThat(optCfg.hasArg).isFalse();
     assertThat(optCfg.isArray).isFalse();
     assertThat(optCfg.type).isNull();
-    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.defaults).isNull();
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isNull();
@@ -111,7 +141,7 @@ public class OptCfgTest {
     assertThat(optCfg.hasArg).isFalse();
     assertThat(optCfg.isArray).isFalse();
     assertThat(optCfg.type).isNull();
-    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.defaults).isNull();
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isNull();
@@ -128,7 +158,7 @@ public class OptCfgTest {
     assertThat(optCfg.hasArg).isFalse();
     assertThat(optCfg.isArray).isFalse();
     assertThat(optCfg.type).isNull();
-    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.defaults).isNull();
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isNull();
@@ -145,7 +175,7 @@ public class OptCfgTest {
     assertThat(optCfg.hasArg).isFalse();
     assertThat(optCfg.isArray).isFalse();
     assertThat(optCfg.type).isNull();
-    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.defaults).isNull();
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isNull();
@@ -162,7 +192,7 @@ public class OptCfgTest {
     assertThat(optCfg.hasArg).isFalse();
     assertThat(optCfg.isArray).isFalse();
     assertThat(optCfg.type).isNull();
-    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.defaults).isNull();
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isNull();
@@ -179,7 +209,7 @@ public class OptCfgTest {
     assertThat(optCfg.hasArg).isTrue();
     assertThat(optCfg.isArray).isFalse();
     assertThat(optCfg.type).isNull();
-    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.defaults).isNull();
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isNull();
@@ -196,7 +226,7 @@ public class OptCfgTest {
     assertThat(optCfg.hasArg).isFalse();
     assertThat(optCfg.isArray).isTrue();
     assertThat(optCfg.type).isNull();
-    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.defaults).isNull();
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isNull();
@@ -213,7 +243,7 @@ public class OptCfgTest {
     assertThat(optCfg.hasArg).isTrue();
     assertThat(optCfg.isArray).isFalse();
     assertThat(optCfg.type).isEqualTo(byte.class);
-    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.defaults).isNull();
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isInstanceOf(ByteConverter.class);
@@ -230,7 +260,7 @@ public class OptCfgTest {
     assertThat(optCfg.hasArg).isTrue();
     assertThat(optCfg.isArray).isFalse();
     assertThat(optCfg.type).isEqualTo(Byte.class);
-    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.defaults).isNull();
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isInstanceOf(ByteConverter.class);
@@ -247,7 +277,7 @@ public class OptCfgTest {
     assertThat(optCfg.hasArg).isTrue();
     assertThat(optCfg.isArray).isFalse();
     assertThat(optCfg.type).isEqualTo(short.class);
-    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.defaults).isNull();
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isInstanceOf(ShortConverter.class);
@@ -264,7 +294,7 @@ public class OptCfgTest {
     assertThat(optCfg.hasArg).isTrue();
     assertThat(optCfg.isArray).isFalse();
     assertThat(optCfg.type).isEqualTo(Short.class);
-    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.defaults).isNull();
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isInstanceOf(ShortConverter.class);
@@ -281,7 +311,7 @@ public class OptCfgTest {
     assertThat(optCfg.hasArg).isTrue();
     assertThat(optCfg.isArray).isFalse();
     assertThat(optCfg.type).isEqualTo(int.class);
-    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.defaults).isNull();
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isInstanceOf(IntConverter.class);
@@ -298,7 +328,7 @@ public class OptCfgTest {
     assertThat(optCfg.hasArg).isTrue();
     assertThat(optCfg.isArray).isFalse();
     assertThat(optCfg.type).isEqualTo(Integer.class);
-    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.defaults).isNull();
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isInstanceOf(IntConverter.class);
@@ -315,7 +345,7 @@ public class OptCfgTest {
     assertThat(optCfg.hasArg).isTrue();
     assertThat(optCfg.isArray).isFalse();
     assertThat(optCfg.type).isEqualTo(long.class);
-    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.defaults).isNull();
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isInstanceOf(LongConverter.class);
@@ -332,7 +362,7 @@ public class OptCfgTest {
     assertThat(optCfg.hasArg).isTrue();
     assertThat(optCfg.isArray).isFalse();
     assertThat(optCfg.type).isEqualTo(Long.class);
-    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.defaults).isNull();
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isInstanceOf(LongConverter.class);
@@ -349,7 +379,7 @@ public class OptCfgTest {
     assertThat(optCfg.hasArg).isTrue();
     assertThat(optCfg.isArray).isFalse();
     assertThat(optCfg.type).isEqualTo(float.class);
-    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.defaults).isNull();
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isInstanceOf(FloatConverter.class);
@@ -366,7 +396,7 @@ public class OptCfgTest {
     assertThat(optCfg.hasArg).isTrue();
     assertThat(optCfg.isArray).isFalse();
     assertThat(optCfg.type).isEqualTo(Float.class);
-    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.defaults).isNull();
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isInstanceOf(FloatConverter.class);
@@ -383,7 +413,7 @@ public class OptCfgTest {
     assertThat(optCfg.hasArg).isTrue();
     assertThat(optCfg.isArray).isFalse();
     assertThat(optCfg.type).isEqualTo(double.class);
-    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.defaults).isNull();
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isInstanceOf(DoubleConverter.class);
@@ -400,7 +430,7 @@ public class OptCfgTest {
     assertThat(optCfg.hasArg).isTrue();
     assertThat(optCfg.isArray).isFalse();
     assertThat(optCfg.type).isEqualTo(Double.class);
-    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.defaults).isNull();
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isInstanceOf(DoubleConverter.class);
@@ -414,10 +444,10 @@ public class OptCfgTest {
 
     assertThat(optCfg.storeKey).isNull();
     assertThat(optCfg.names).isEmpty();
-    assertThat(optCfg.hasArg).isTrue();
+    assertThat(optCfg.hasArg).isFalse();
     assertThat(optCfg.isArray).isFalse();
     assertThat(optCfg.type).isEqualTo(boolean.class);
-    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.defaults).isNull();
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isNull();
@@ -431,10 +461,10 @@ public class OptCfgTest {
 
     assertThat(optCfg.storeKey).isNull();
     assertThat(optCfg.names).isEmpty();
-    assertThat(optCfg.hasArg).isTrue();
+    assertThat(optCfg.hasArg).isFalse();
     assertThat(optCfg.isArray).isFalse();
     assertThat(optCfg.type).isEqualTo(Boolean.class);
-    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.defaults).isNull();
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isNull();
@@ -451,7 +481,7 @@ public class OptCfgTest {
     assertThat(optCfg.hasArg).isTrue();
     assertThat(optCfg.isArray).isFalse();
     assertThat(optCfg.type).isEqualTo(String.class);
-    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.defaults).isNull();
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isNull();
@@ -468,7 +498,7 @@ public class OptCfgTest {
     assertThat(optCfg.hasArg).isTrue();
     assertThat(optCfg.isArray).isFalse();
     assertThat(optCfg.type).isEqualTo(OffsetDateTime.class);
-    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.defaults).isNull();
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isNull();
@@ -523,7 +553,7 @@ public class OptCfgTest {
     assertThat(optCfg.hasArg).isFalse();
     assertThat(optCfg.isArray).isFalse();
     assertThat(optCfg.type).isNull();
-    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.defaults).isNull();
     assertThat(optCfg.desc).isEqualTo("option desc");
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isNull();
@@ -540,7 +570,7 @@ public class OptCfgTest {
     assertThat(optCfg.hasArg).isFalse();
     assertThat(optCfg.isArray).isFalse();
     assertThat(optCfg.type).isNull();
-    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.defaults).isNull();
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isEqualTo("<num>");
     assertThat(optCfg.converter).isNull();
@@ -559,7 +589,7 @@ public class OptCfgTest {
     assertThat(optCfg.hasArg).isFalse();
     assertThat(optCfg.isArray).isFalse();
     assertThat(optCfg.type).isNull();
-    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.defaults).isNull();
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isEqualTo(c);
@@ -578,7 +608,7 @@ public class OptCfgTest {
     assertThat(optCfg.hasArg).isFalse();
     assertThat(optCfg.isArray).isFalse();
     assertThat(optCfg.type).isNull();
-    assertThat(optCfg.defaults).isEmpty();
+    assertThat(optCfg.defaults).isNull();
     assertThat(optCfg.desc).isNull();
     assertThat(optCfg.argInHelp).isNull();
     assertThat(optCfg.converter).isNull();

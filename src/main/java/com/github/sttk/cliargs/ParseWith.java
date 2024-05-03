@@ -15,6 +15,7 @@ import static java.util.Collections.emptyMap;
 import com.github.sttk.cliargs.CliArgs.StoreKeyIsDuplicated;
 import com.github.sttk.cliargs.CliArgs.ConfigIsArrayButHasNoArg;
 import com.github.sttk.cliargs.CliArgs.ConfigHasDefaultsButHasNoArg;
+import com.github.sttk.cliargs.CliArgs.ConfigIsNotArrayButDefaultsIsArray;
 import com.github.sttk.cliargs.CliArgs.OptionNameIsDuplicated;
 import com.github.sttk.cliargs.CliArgs.UnconfiguredOption;
 import com.github.sttk.cliargs.CliArgs.OptionTakesNoArg;
@@ -68,11 +69,20 @@ interface ParseWith {
           var cmd = new Cmd(cmdName, emptyList(), emptyMap());
           return new Result(cmd, optCfgs, exc);
         }
-        if (! isEmpty(cfg.defaults)) {
+        if (cfg.defaults != null) {
           var reason = new ConfigHasDefaultsButHasNoArg(storeKey);
           var exc = new ReasonedException(reason);
           var cmd = new Cmd(cmdName, emptyList(), emptyMap());
           return new Result(cmd, optCfgs, exc);
+        }
+      } else {
+        if (! cfg.isArray && cfg.defaults != null) {
+          if (cfg.defaults.isEmpty() || cfg.defaults.size() > 1) {
+            var reason = new ConfigIsNotArrayButDefaultsIsArray(cfg.storeKey);
+            var exc = new ReasonedException(reason);
+            var cmd = new Cmd(cmdName, emptyList(), emptyMap());
+            return new Result(cmd, optCfgs, exc);
+          }
         }
       }
 
@@ -153,16 +163,18 @@ interface ParseWith {
         opts.put(storeKey, list);
       }
       if (cfg.converter != null) {
-        try {
-          list.add(cfg.converter.convert(arg, name, storeKey));
-        } catch (ReasonedException e) {
-          throw e;
-        } catch (Exception e) {
-          var reason = new FailToConvertOptionArg(arg, name, storeKey);
-          throw new ReasonedException(reason, e);
+        if (cfg.hasArg) {
+          try {
+            list.add(cfg.converter.convert(arg, name, storeKey));
+          } catch (ReasonedException e) {
+            throw e;
+          } catch (Exception e) {
+            var reason = new FailToConvertOptionArg(arg, name, storeKey);
+            throw new ReasonedException(reason, e);
+          }
         }
       } else {
-        if (arg != null) {
+        if (cfg.hasArg) {
           list.add(arg);
         }
       }
@@ -179,7 +191,7 @@ interface ParseWith {
       @SuppressWarnings("unchecked")
       var list = (List<Object>)opts.get(cfg.storeKey);
 
-      if (! isEmpty(cfg.defaults)) {
+      if (cfg.defaults != null) {
         if (list == null) {
           list = new ArrayList<>();
           opts.put(cfg.storeKey, list);
