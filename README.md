@@ -69,7 +69,7 @@ with `-` or `--`.
     cmd.hasOpt("x");           // true
     cmd.hasOpt("y");           // true
     cmd.hasOpt("z");           // true
-    cmd.getOptArg("foo-bar");  // true
+    cmd.getOptArg("foo-bar");  // null
     cmd.getOptArg("baz");      // "1"
     cmd.getOptArg("x");        // null
     cmd.getOptArg("y");        // null
@@ -105,7 +105,7 @@ Or
 This library provides the method `CliArgs#parseWith` which parses command line arguments with configurations.
 This method takes an array of option configurations: `OptCfg[]` as the argument, and divides command line arguments to options and command arguments with this configurations.
 
-And option cnfiguration has fields: `storeKey`, `hasArg`, `isArray`, `type`, `defaults`, `decc`, `argInHelp`, `converter`, and `postparser`.
+And option cnfiguration has fields: `storeKey`, `names`, `hasArg`, `isArray`, `type`, `defaults`, `decc`, `argInHelp`, `converter`, and `postparser`.
 
 `storeKey` field is specified the key name to store the option value in the option map.
 If this field is not specified the first element of `names` field is set instead.
@@ -116,18 +116,21 @@ If you want to prioritize the output of short option name first in the help text
 `OptCfg(field("foo-bar", names("f", "foo-bar"))`.
 
 `hasArg` field indicates the option requires one or more values.
+
 `isArray` field indicates the option can have multiple values.
 
 `types` field is set the data type of the option value(s).
+
 `defaults` field is an array which is used as default one or more values if the
 option is not specified in command line arguments.
 
 `desc` field is a description of the option for help text.
+
 `argInHelp` field is a text which is output after option name and aliases as an option value in help text.
 
 `converter` field is a functional interface which converts an option argument string to the instance of the class specified by `type` field.
 
-`postparser` field is a functional interface which is used to process option argument(s) after parsing if needed.
+`postparser` field is a functional interface which processes option argument(s) after parsing if this field is specified.
 
 ```java
   var args = new String[]{"--foo-bar", "hoge", "--baz", "1", "-z=2", "-x", "fuga"};
@@ -279,7 +282,7 @@ And `arg` is what to specify a text for an option argument value in help text.
 
 The following help text is generated from the above optCfgs.
 
-```
+```java
   var help = new Help();
   help.addText("This is the usage description.")
   help.addOpts(optCfgs, 12, 1);
