@@ -12,6 +12,7 @@ import com.github.sttk.cliargs.annotation.Opt;
 import com.github.sttk.exception.ReasonedException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Provides the static methods to parse and print command line arguments.
@@ -350,5 +351,31 @@ public class CliArgs {
     Object options
   ) throws ReasonedException {
     return ParseFor.makeOptCfgsFor(options);
+  }
+
+  /**
+   * Finds the index of the first non option-format element in a specified string
+   * array.
+   * If non option-format element is not found, this method return a negative
+   * integer.
+   * If {@code "--"} is found before finding non option-format element, the next
+   * index is always returned if its element starts with hyphens.
+   *
+   * @param args  A string array from command line arguments.
+   * @return  The index of the first non option element.
+   */
+  public static int findFirstArg(String ...args) {
+    boolean isNonOpt = false;
+    for (int i = 0; i < args.length; i++) {
+      if (isNonOpt) {
+        return i;
+      } else if (Objects.equals(args[i], "--")) {
+        isNonOpt = true;
+        continue;
+      } else if (! args[i].startsWith("-")) {
+        return i;
+      }
+    }
+    return -1;
   }
 }
