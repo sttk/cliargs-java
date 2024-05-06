@@ -11,4 +11,5 @@ module com.github.sttk.cliargs {
   exports com.github.sttk.cliargs;
   exports com.github.sttk.cliargs.convert;
   requires transitive com.github.sttk.reasonedexception;
+  requires transitive com.github.sttk.linebreak;
 }
