@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"m":"com.github.sttk.cliargs","l":"com.github.sttk.cliargs"},{"m":"com.github.sttk.cliargs","l":"com.github.sttk.cliargs.convert"}];updateSearchResults();
