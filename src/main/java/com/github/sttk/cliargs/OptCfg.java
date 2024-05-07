@@ -6,6 +6,7 @@
 package com.github.sttk.cliargs;
 
 import static com.github.sttk.cliargs.Util.isEmpty;
+import static com.github.sttk.cliargs.Util.isBlank;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.emptyList;
 
@@ -210,17 +211,18 @@ public class OptCfg {
   }
 
   private void fillmissing(Init<?> init) {
+    List<String> nonBlankNames = (init.names == null) ? null :
+      init.names.stream().filter(s -> !isBlank(s)).toList();
+
     if (isEmpty(init.storeKey)) {
-      if (! isEmpty(init.names)) {
-        init.storeKey = init.names.get(0);
+      if (! isEmpty(nonBlankNames)) {
+        init.storeKey = nonBlankNames.get(0);
       }
     } else {
-      if (isEmpty(init.names)) {
-        init.names = new ArrayList<String>();
+      if (isEmpty(nonBlankNames)) {
+        init.names = (init.names == null) ? new ArrayList<String>() :
+          new ArrayList<String>(init.names);
         init.names.add(init.storeKey);
-      } else if (isEmpty(init.names.get(0))) {
-        init.names = new ArrayList<String>(init.names);
-        init.names.set(0, init.storeKey);
       }
     }
 

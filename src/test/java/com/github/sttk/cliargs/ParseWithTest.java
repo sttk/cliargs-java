@@ -2121,4 +2121,58 @@ public class ParseWithTest {
     assertThat((List<?>)cmd.getOptArgs("foo")).isEmpty();
     assertThat(cmd.getArgs()).isEmpty();
   }
+
+  @Test
+  void testParseWith_notToSetBlankNameInNamesToStoreKey() {
+    @SuppressWarnings("unchecked")
+    var cfgs = new OptCfg[]{
+      new OptCfg(
+        names(" ", "foo", "f"),
+        hasArg(true),
+        isArray(true)
+      )
+    };
+
+    var args = new String[] {"--foo", "A", "-f", "B"};
+    var cliargs = new CliArgs("app", args);
+    var result = cliargs.parseWith(cfgs);
+
+    assertThat(result.optCfgs()).isEqualTo(cfgs);
+    assertThat(result.exception()).isNull();
+
+    var cmd = result.cmd();
+    assertThat(cmd.getName()).isEqualTo("app");
+    assertThat(cmd.hasOpt("foo")).isTrue();
+    assertThat((String)cmd.getOptArg("foo")).isEqualTo("A");
+    List<String> foo = cmd.getOptArgs("foo");
+    assertThat(foo).containsExactly("A", "B");
+    assertThat(cmd.getArgs()).isEmpty();
+  }
+
+  @Test
+  void testParseWith_addStoreKeyToNamesIsSpecifiedNamesAreAllBlank() {
+    @SuppressWarnings("unchecked")
+    var cfgs = new OptCfg[]{
+      new OptCfg(
+        storeKey("foo"),
+        names(" ", "  ", "   "),
+        hasArg(true)
+      )
+    };
+
+    var args = new String[] {"--foo", "A"};
+    var cliargs = new CliArgs("app", args);
+    var result = cliargs.parseWith(cfgs);
+
+    assertThat(result.optCfgs()).isEqualTo(cfgs);
+    assertThat(result.exception()).isNull();
+
+    var cmd = result.cmd();
+    assertThat(cmd.getName()).isEqualTo("app");
+    assertThat(cmd.hasOpt("foo")).isTrue();
+    assertThat((String)cmd.getOptArg("foo")).isEqualTo("A");
+    List<String> foo = cmd.getOptArgs("foo");
+    assertThat(foo).containsExactly("A");
+    assertThat(cmd.getArgs()).isEmpty();
+  }
 }

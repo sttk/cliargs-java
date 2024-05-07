@@ -183,12 +183,29 @@ public class OptCfgTest {
   }
 
   @Test
-  void testConstructor_withNamedParam_firstElemOfNamesIsEmpty() {
+  void testConstructor_withNamedParam_acceptBlankNames() {
     @SuppressWarnings("unchecked")
-    var optCfg = new OptCfg(storeKey("FooBar"), names("", "f"));
+    var optCfg = new OptCfg(storeKey("FooBar"), names("", " ", "f"));
 
     assertThat(optCfg.storeKey).isEqualTo("FooBar");
-    assertThat(optCfg.names).containsExactly("FooBar", "f");
+    assertThat(optCfg.names).containsExactly("", " ", "f");
+    assertThat(optCfg.hasArg).isFalse();
+    assertThat(optCfg.isArray).isFalse();
+    assertThat(optCfg.type).isNull();
+    assertThat(optCfg.defaults).isNull();
+    assertThat(optCfg.desc).isNull();
+    assertThat(optCfg.argInHelp).isNull();
+    assertThat(optCfg.converter).isNull();
+    assertThat(optCfg.postparser).isNull();
+  }
+
+  @Test
+  void testConstructor_withNamedParam_notSetBlankNameToStoreKey() {
+    @SuppressWarnings("unchecked")
+    var optCfg = new OptCfg(names("  ", "foo-bar", "f"));
+
+    assertThat(optCfg.storeKey).isEqualTo("foo-bar");
+    assertThat(optCfg.names).containsExactly("  ", "foo-bar", "f");
     assertThat(optCfg.hasArg).isFalse();
     assertThat(optCfg.isArray).isFalse();
     assertThat(optCfg.type).isNull();
