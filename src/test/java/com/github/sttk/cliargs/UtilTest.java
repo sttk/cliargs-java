@@ -1,6 +1,7 @@
 package com.github.sttk.cliargs;
 
 import static com.github.sttk.cliargs.Util.isEmpty;
+import static com.github.sttk.cliargs.Util.isBlank;
 import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 import java.util.List;
@@ -30,5 +31,15 @@ public class UtilTest {
     assertThat(isEmpty(List.of(""))).isFalse();
     assertThat(isEmpty(new ArrayList<String>())).isTrue();
     assertThat(isEmpty((List<Integer>) null)).isTrue();
+  }
+
+  @Test
+  void testIsBlank_string() {
+    assertThat(isBlank("abc")).isFalse();
+    assertThat(isBlank("")).isTrue();
+    assertThat(isBlank((String)null)).isTrue();
+    assertThat(isBlank(" ")).isTrue();
+    assertThat(isBlank("　")).isTrue();
+    assertThat(isBlank("\t")).isTrue();
   }
 }

@@ -20,4 +20,8 @@ interface Util {
   static boolean isEmpty(List<?> list) {
     return (list == null || list.isEmpty());
   }
+
+  static boolean isBlank(String value) {
+    return (value == null || value.isBlank());
+  }
 }
