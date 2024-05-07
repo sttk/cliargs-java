@@ -12,6 +12,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import java.util.List;
 import java.util.Map;
+import java.util.StringJoiner;
 
 /**
  * Is the class which contains a command name, command arguments, and option
@@ -23,6 +24,20 @@ public class Cmd {
   private final String name;
   private final List<String> args;
   private final Map<String, List<?>> opts;
+
+  /**
+   * Outputs a string of the content of this object.
+   *
+   * @return  A content string of this object.
+   */
+  @Override
+  public String toString() {
+    return new StringJoiner(", ", "Cmd{", "}")
+      .add("name=" + this.name)
+      .add("args=" + this.args)
+      .add("opts=" + this.opts)
+      .toString();
+  }
 
   /**
    * Is the constructor which takes the fields of this class.

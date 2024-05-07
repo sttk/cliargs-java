@@ -111,4 +111,19 @@ public class CmdTest {
       fail();
     } catch (UnsupportedOperationException e) {}
   }
+
+  @Test
+  void testToString() {
+    var args = new ArrayList<>(List.of("a0", "a1", "a2"));
+
+    var opts = new HashMap<String, List<?>>();
+    opts.put("o0", new ArrayList<Integer>(List.of(123, 456)));
+    opts.put("o1", new ArrayList<String>());
+
+    var cmd = new Cmd("foo", args, opts);
+
+    assertThat(cmd.toString()).isEqualTo(
+      "Cmd{name=foo, args=[a0, a1, a2], opts={o0=[123, 456], o1=[]}}"
+    );
+  }
 }

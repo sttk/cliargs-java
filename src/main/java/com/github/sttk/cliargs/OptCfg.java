@@ -23,6 +23,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.StringJoiner;
 import com.github.sttk.exception.ReasonedException;
 
 /**
@@ -100,6 +101,27 @@ public class OptCfg {
    * arguments.
    */
   public final Postparser<?> postparser;
+
+  /**
+   * Outputs a string of the content of this object.
+   *
+   * @return  A content string of this object.
+   */
+  @Override
+  public String toString() {
+    return new StringJoiner(", ", "OptCfg{", "}")
+      .add("storeKey=" + this.storeKey)
+      .add("names=" + this.names)
+      .add("hasArg=" + this.hasArg)
+      .add("isArray=" + this.isArray)
+      .add("type=" + this.type)
+      .add("defaults=" + this.defaults)
+      .add("desc=" + this.desc)
+      .add("argInHelp=" + this.argInHelp)
+      .add("converter=" + this.converter)
+      .add("postparser=" + this.postparser)
+      .toString();
+  }
 
   /**
    * Is the constructor that takes the all field values as parameters.

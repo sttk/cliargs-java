@@ -664,4 +664,39 @@ public class OptCfgTest {
     assertThat(optCfg.converter).isEqualTo(c);
     assertThat(optCfg.postparser).isEqualTo(p);
   }
+
+  @Test
+  void testToString() {
+    var c = new IntConverter();
+    Postparser<Integer> p = i -> {};
+
+    @SuppressWarnings("unchecked")
+    var optCfg = new OptCfg(
+      desc("The option description"),
+      isArray(true),
+      names("foo-bar", "f"),
+      storeKey("FooBar"),
+      converter(c),
+      postparser(p),
+      hasArg(true),
+      argInHelp("<num>"),
+      type(int.class),
+      defaults(123, 45)
+    );
+
+    assertThat(optCfg.toString()).matches(
+      "OptCfg\\{" +
+      "storeKey=FooBar, " +
+      "names=\\[foo-bar, f\\], " +
+      "hasArg=true, " +
+      "isArray=true, " +
+      "type=int, " +
+      "defaults=\\[123, 45\\], " +
+      "desc=The option description, " +
+      "argInHelp=\\<num\\>, " +
+      "converter=[^,]*, " +
+      "postparser=[^,]*" +
+      "}"
+    );
+  }
 }
