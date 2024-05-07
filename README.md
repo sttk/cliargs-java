@@ -363,6 +363,16 @@ And the help text can be generated as follows:
 ## Native build
 
 This library supports native build with GraalVM.
+However, since it utilizes reflection for the option store object passed to `CliArgs#parseFor`, the reflection configurations for the class of this object need to be specified in `reflect-config.json`. The configuration are as follows:
+
+```
+[
+  {
+    "name":"pkg.path.to.OptionStore",
+    "allDeclaredFields":true
+  }
+]
+```
 
 See the following pages to setup native build environment on Linux/macOS or Windows.
 - [Setup native build environment on Linux/macOS](https://www.graalvm.org/latest/reference-manual/native-image/)
