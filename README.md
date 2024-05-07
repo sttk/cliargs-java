@@ -60,7 +60,7 @@ with `-` or `--`.
   var cliargs = new CliArgs("path/to/app", args);
   var result = cliargs.parse();
 
-  if (result.exception() != null) {
+  if (result.exception() == null) {
     var cmd = result.cmd();
     cmd.getName();             // "app"
     cmd.getArgs();             // ["hoge", "fuga"]
@@ -133,6 +133,8 @@ option is not specified in command line arguments.
 `postparser` field is a functional interface which processes option argument(s) after parsing if this field is specified.
 
 ```java
+import com.github.sttk.cliargs.OptCfg.NamedParam.*;
+...
   var args = new String[]{"--foo-bar", "hoge", "--baz", "1", "-z=2", "-x", "fuga"};
   var cliargs = new CliArgs("path/to/app", args);
 
@@ -158,7 +160,7 @@ option is not specified in command line arguments.
   };
 
   var result = cliargs.parseWith(optCfgs);
-  if (result.exception() != null) {
+  if (result.exception() == null) {
     var cmd = result.cmd();
     cmd.getName();             // "app"
     cmd.getArgs();             // ["hoge", "fuga"]
@@ -227,8 +229,8 @@ And `arg` is what to specify a text for an option argument value in help text.
   var options = new Options();
 
   var result = cliargs.parseFor(options);
-  var cmd = result.cmd();
   var optCfgs = result.optCfgs();
+  var cmd = result.cmdOrThrow();
 
   cmd.getName();             // "app"
   cmd.getArgs();             // ["hoge", "fuga"]
@@ -365,7 +367,7 @@ And the help text can be generated as follows:
 This library supports native build with GraalVM.
 However, since it utilizes reflection for the option store object passed to `CliArgs#parseFor`, the reflection configurations for the class of this object need to be specified in `reflect-config.json`. The configuration are as follows:
 
-```
+```json
 [
   {
     "name":"pkg.path.to.OptionStore",
