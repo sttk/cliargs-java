@@ -1,809 +1,1400 @@
 package com.github.sttk.cliargs;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
-import org.junit.jupiter.api.Test;
+import static com.github.sttk.cliargs.Base.isAllowedCodePoint;
+import static com.github.sttk.cliargs.Base.isAllowedFirstCodePoint;
+import static com.github.sttk.cliargs.Base.isEmpty;
+import static com.github.sttk.cliargs.Base.isBlank;
+import static com.github.sttk.cliargs.OptCfg.Param.*;
 
-import static com.github.sttk.cliargs.OptCfg.NamedParam.*;
-import static java.util.Collections.emptyList;
-import com.github.sttk.exception.ReasonedException;
+import com.github.sttk.linebreak.Term;
+
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Map;
-import java.util.HashMap;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Nested;
 
 @SuppressWarnings("missing-explicit-ctor")
 public class HelpTest {
 
-  @Test
-  void testHelp_empty() {
-    var help = new Help();
-    var iter = help.iter();
+  @Nested
+  class TestsOfMakeOptTitle {
+    @Test
+    void testWhenCfgHasOnlyOneLongName() {
+      var cfg = new OptCfg(names("foo-bar"));
+      var body = Help.makeOptTitle(cfg);
+      assertThat(body.firstIndent).isEqualTo(0);
+      assertThat(body.text).isEqualTo("--foo-bar");
+    }
 
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("");
+    @Test
+    void testWhenCfgHasOnlyOneShortName() {
+      var cfg = new OptCfg(names("f"));
+      var body = Help.makeOptTitle(cfg);
+      assertThat(body.firstIndent).isEqualTo(0);
+      assertThat(body.text).isEqualTo("-f");
+    }
 
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
+    @Test
+    void testWhenCfgHasMultipleNames() {
+      var cfg = new OptCfg(names("f", "b", "foo-bar"));
+      var body = Help.makeOptTitle(cfg);
+      assertThat(body.firstIndent).isEqualTo(0);
+      assertThat(body.text).isEqualTo("-f, -b, --foo-bar");
 
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
+      cfg = new OptCfg(names("foo-bar", "f", "b"));
+      body = Help.makeOptTitle(cfg);
+      assertThat(body.firstIndent).isEqualTo(0);
+      assertThat(body.text).isEqualTo("--foo-bar, -f, -b");
+    }
+
+    @Test
+    void testWhenCfgHasNoNameButStoreKey() {
+      var cfg = new OptCfg(storeKey("Foo_Bar"));
+      var body = Help.makeOptTitle(cfg);
+      assertThat(body.firstIndent).isEqualTo(0);
+      assertThat(body.text).isEqualTo("--Foo_Bar");
+    }
+
+    @Test
+    void testWhenCfgNamesContainsEmptyName() {
+      var cfg = new OptCfg(names("", "f"));
+      var body = Help.makeOptTitle(cfg);
+      assertThat(body.firstIndent).isEqualTo(4);
+      assertThat(body.text).isEqualTo("-f");
+
+      cfg = new OptCfg(names("", "foo-bar"));
+      body = Help.makeOptTitle(cfg);
+      assertThat(body.firstIndent).isEqualTo(4);
+      assertThat(body.text).isEqualTo("--foo-bar");
+
+      cfg = new OptCfg(names("", "f", "", "b", ""));
+      body = Help.makeOptTitle(cfg);
+      assertThat(body.firstIndent).isEqualTo(4);
+      assertThat(body.text).isEqualTo("-f,     -b");
+
+      cfg = new OptCfg(names("", "foo", "", "bar", ""));
+      body = Help.makeOptTitle(cfg);
+      assertThat(body.firstIndent).isEqualTo(4);
+      assertThat(body.text).isEqualTo("--foo,     --bar");
+    }
+
+    @Test
+    void testWhenCfgNamesAreAllEmptyAndHasStoreKey() {
+      var cfg = new OptCfg(storeKey("FooBar"), names("", ""));
+      var body = Help.makeOptTitle(cfg);
+      assertThat(body.firstIndent).isEqualTo(8);
+      assertThat(body.text).isEqualTo("--FooBar");
+
+      cfg = new OptCfg(storeKey("F"), names("", ""));
+      body = Help.makeOptTitle(cfg);
+      assertThat(body.firstIndent).isEqualTo(8);
+      assertThat(body.text).isEqualTo("-F");
+
+      cfg = new OptCfg(storeKey(""), names("", ""));
+      body = Help.makeOptTitle(cfg);
+      assertThat(body.firstIndent).isEqualTo(8);
+      assertThat(body.text).isEqualTo("");
+    }
+
+    @Test
+    void testWithArgInHelp() {
+      var cfg = new OptCfg(names("foo-bar"), argInHelp("<n>"));
+      var body = Help.makeOptTitle(cfg);
+      assertThat(body.firstIndent).isEqualTo(0);
+      assertThat(body.text).isEqualTo("--foo-bar <n>");
+
+      cfg = new OptCfg(names("", "foo-bar"), argInHelp("txt"));
+      body = Help.makeOptTitle(cfg);
+      assertThat(body.firstIndent).isEqualTo(4);
+      assertThat(body.text).isEqualTo("--foo-bar txt");
+
+      cfg = new OptCfg(names("", "f", "", "b", ""), argInHelp("num"));
+      body = Help.makeOptTitle(cfg);
+      assertThat(body.firstIndent).isEqualTo(4);
+      assertThat(body.text).isEqualTo("-f,     -b num");
+    }
   }
 
-  @Test
-  void testHelp_addText_oneLine_withNoWrapping() {
-    var help = new Help();
-    help.addText("abc");
-    var iter = help.iter();
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("abc");
-
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
-
-    help = new Help();
-    help.addText("");
-    iter = help.iter();
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("");
-
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
-
-    help = new Help();
-    help.addText((String) null);
-    iter = help.iter();
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("");
-
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
-  }
-
-  @Test
-  void testHelp_addText_multiLines_withNoWrapping() {
-    var help = new Help();
-    help.addText("abc\ndef");
-    var iter = help.iter();
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("abc");
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("def");
-
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
-  }
-
-  @Test
-  void testHelp_addText_oneLine_withWrapping() {
-    var help = new Help();
-    help.addText("a123456789b123456789c123456789d123456789e123456789f123456789g123456789h123456789i12345");
-    var iter = help.iter();
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("a123456789b123456789c123456789d123456789e123456789f123456789g123456789h123456789");
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("i12345");
-
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
-  }
-
-  @Test
-  void testHelp_addText_multiLines_withWrapping() {
-    var help = new Help();
-    help.addText("a123456789b123456789c123456789d123456789e123456789f123456789g123456789h123456789i12345\n6789j123456789k123456789l123456789m123456789n123456789o123456789p123456789q12345678");
-    var iter = help.iter();
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("a123456789b123456789c123456789d123456789e123456789f123456789g123456789h123456789");
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("i12345");
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("6789j123456789k123456789l123456789m123456789n123456789o123456789p123456789q12345");
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("678");
-
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
-  }
-
-  @Test
-  void testHelp_addText_withMarginLeftByConstructorArg() {
-    var help = new Help(5);
-    help.addText("abc\ndef");
-    var iter = help.iter();
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("     abc");
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("     def");
-
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
-  }
-
-  @Test
-  void testHelp_addText_withMarginLeftAndMarginRightByConstructorArg() {
-    var help = new Help(5, 3);
-    help.addText("a123456789b123456789c123456789d123456789e123456789f123456789g123456789h123456789i12345\n6789");
-    var iter = help.iter();
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("     a123456789b123456789c123456789d123456789e123456789f123456789g123456789h1");
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("     23456789i12345");
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("     6789");
-
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
-  }
-
-  @Test
-  void testHelp_addText_withMarginLeftByAddTextArg() {
-    var help = new Help();
-    help.addText("abc\ndef", 0, 5);
-    var iter = help.iter();
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("     abc");
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("     def");
-
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
-  }
-
-  @Test
-  void testHelp_addText_withMarginLeftAndMarginRightByAddTextArg() {
-    var help = new Help();
-    help.addText("a123456789b123456789c123456789d123456789e123456789f123456789g123456789h123456789i12345\n6789", 0, 5, 3);
-    var iter = help.iter();
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("     a123456789b123456789c123456789d123456789e123456789f123456789g123456789h1");
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("     23456789i12345");
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("     6789");
-
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
-  }
-
-  @Test
-  void testAddText_Indent() {
-    var help = new Help();
-    help.addText("a123456789b123456789c123456789d123456789e123456789f123456789g123456789h123456789i12345\n6789", 8);
-    help.addText("a123456789b123456789c123456789d123456789e123456789f123456789g123456789h123456789i12345\n6789", 5);
-    var iter = help.iter();
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("a123456789b123456789c123456789d123456789e123456789f123456789g123456789h123456789");
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("        i12345");
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("        6789");
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("a123456789b123456789c123456789d123456789e123456789f123456789g123456789h123456789");
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("     i12345");
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("     6789");
-
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
-  }
-
-  @Test
-  void testAddTexts_zeroText() {
-    var help = new Help();
-    help.addTexts(emptyList());
-    var iter = help.iter();
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("");
-
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
-
-    help = new Help();
-    help.addTexts(null);
-    iter = help.iter();
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("");
-
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
-  }
-
-  @Test
-  void testAddTexts_oneText() {
-    var help = new Help();
-    help.addTexts(List.of(
-      "a12345678 b12345678 c12345678 d12345678 " +
-      "e12345678 f12345678 g12345678 h12345678 i123"
-    ));
-    var iter = help.iter();
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo(
-      "a12345678 b12345678 c12345678 d12345678 " +
-      "e12345678 f12345678 g12345678 h12345678"
-    );
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("i123");
-
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
-  }
-
-  @Test
-  void testAddTexts_multipleTexts() {
-    var help = new Help();
-    help.addTexts(List.of(
-      "a12345678 b12345678 c12345678 d12345678 " +
-      "e12345678 f12345678 g12345678 h12345678 i123",
-      "j12345678 k12345678 l12345678 m12345678 " +
-      "n12345678 o12345678 p12345678 q12345678 r123"
-    ));
-    var iter = help.iter();
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo(
-      "a12345678 b12345678 c12345678 d12345678 " +
-      "e12345678 f12345678 g12345678 h12345678"
-    );
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("i123");
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo(
-      "j12345678 k12345678 l12345678 m12345678 " +
-      "n12345678 o12345678 p12345678 q12345678"
-    );
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("r123");
-
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
-  }
-
-  @Test
-  void testAddTexts_withIndent() {
-    var help = new Help();
-    help.addTexts(List.of(
-      "a12345678  123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789",
-      "b1234      123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789"
-    ), 11);
-    var iter = help.iter();
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("a12345678  123456789 123456789 123456789 123456789 123456789 123456789 123456789");
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("           123456789 123456789");
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("b1234      123456789 123456789 123456789 123456789 123456789 123456789 123456789");
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("           123456789 123456789");
-
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
-  }
-
-  @Test
-  void testAddTexts_withMargins() {
-    var help = new Help(2, 2);
-    help.addTexts(List.of(
-      "a12345678  123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789",
-      "b1234      123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789"
-    ), 11, 5, 3);
-    var iter = help.iter();
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("       a12345678  123456789 123456789 123456789 123456789 123456789");
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("                  123456789 123456789 123456789 123456789");
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("       b1234      123456789 123456789 123456789 123456789 123456789");
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("                  123456789 123456789 123456789 123456789");
-
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
-  }
-
-  @Test
-  void testAddOpts_zeroOpts() {
-    var help = new Help();
-    help.addOpts(new OptCfg[0]);
-    var iter = help.iter();
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("");
-
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
-  }
-
-  @Test
-  void testAddOpts_oneOpts_withNoWrapping() {
-    var help = new Help();
-    help.addOpts(new OptCfg[] {
-      new OptCfg(names("foo-bar"), desc("This is a description of option."))
-    });
-    var iter = help.iter();
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("--foo-bar  This is a description of option.");
-
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
-  }
-
-  @Test
-  void testAddOpts_oneOpts_withWrapping() {
-    var help = new Help();
-    help.addOpts(new OptCfg[] {
-      new OptCfg(
-        names("foo-bar", "f", "foo", "b", "bar"),
-        desc("a12345678 b12345678 c12345678 d12345678 e12345678 f12345678 g12345678")
-      )
-    });
-    var iter = help.iter();
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("--foo-bar, -f, --foo, -b, --bar  a12345678 b12345678 c12345678 d12345678");
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("                                 e12345678 f12345678 g12345678");
-
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
-  }
-
-  @Test
-  void testAddOpts_oneOpts_withMarginsByConstructorArg() {
-    var help = new Help(5, 3);
-    help.addOpts(new OptCfg[] {
-      new OptCfg(
-        names("foo-bar", "f"),
-        hasArg(true),
-        desc("a12345678 b12345678 c12345678 d12345678 e12345678 f12345678 g12345678 h12345678"),
-        argInHelp("<text>")
-      )
-    });
-    var iter = help.iter();
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("     --foo-bar, -f <text>  a12345678 b12345678 c12345678 d12345678 e12345678");
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("                           f12345678 g12345678 h12345678");
-
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
-  }
-
-  @Test
-  void testAddOpts_oneOpts_withMarginsByAddOptsArg() {
-    var help = new Help();
-    help.addOpts(new OptCfg[] {
-      new OptCfg(
-        names("foo-bar", "f"),
-        hasArg(true),
-        desc("a12345678 b12345678 c12345678 d12345678 e12345678 f12345678 g12345678 h12345678"),
-        argInHelp("<text>")
-      )
-    }, 0, 5, 3);
-    var iter = help.iter();
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("     --foo-bar, -f <text>  a12345678 b12345678 c12345678 d12345678 e12345678");
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("                           f12345678 g12345678 h12345678");
-
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
-  }
-
-  @Test
-  void testAddOpts_oneOpts_withMarginsByConstructorArgAndAddOptsArg() {
-    var help = new Help(2, 2);
-    help.addOpts(new OptCfg[] {
-      new OptCfg(
-        names("foo-bar", "f"),
-        hasArg(true),
-        desc("a12345678 b12345678 c12345678 d12345678 e12345678 f12345678 g12345678 h12345678"),
-        argInHelp("<text>")
-      )
-    }, 0, 3, 1);
-    var iter = help.iter();
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("     --foo-bar, -f <text>  a12345678 b12345678 c12345678 d12345678 e12345678");
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("                           f12345678 g12345678 h12345678");
-
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
-  }
-
-  @Test
-  void testAddOpts_oneOpts_withIndentLongerThanTitle() {
-    var help = new Help();
-    help.addOpts(new OptCfg[] {
-      new OptCfg(
-        names("foo-bar", "f"),
-        hasArg(true),
-        desc("a12345678 b12345678 c12345678 d12345678 e12345678 f12345678 g12345678 h12345678"),
-        argInHelp("<text>")
-      )
-    }, 25);
-    var iter = help.iter();
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("--foo-bar, -f <text>     a12345678 b12345678 c12345678 d12345678 e12345678");
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("                         f12345678 g12345678 h12345678");
-
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
-  }
-
-  @Test
-  void testAddOpts_oneOpts_withIndentShorterThanTitle() {
-    var help = new Help();
-    help.addOpts(new OptCfg[] {
-      new OptCfg(
-        names("foo-bar", "f"),
-        hasArg(true),
-        desc("a12345678 b12345678 c12345678 d12345678 e12345678 f12345678 g12345678 h12345678"),
-        argInHelp("<text>")
-      )
-    }, 10);
-    var iter = help.iter();
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("--foo-bar, -f <text>");
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("          a12345678 b12345678 c12345678 d12345678 e12345678 f12345678 g12345678");
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("          h12345678");
-
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
-  }
-
-  @Test
-  void testAddOpts_multipleOpts() {
-    var help = new Help();
-    help.addOpts(new OptCfg[] {
-      new OptCfg(
-        names("foo-bar", "f"),
-        hasArg(true),
-        desc("a12345678 b12345678 c12345678 d12345678 e12345678 f12345678 g12345678 h12345678"),
-        argInHelp("<text>")
-      ),
-      new OptCfg(
-        names("baz", "b"),
-        desc("i12345678 j12345678 k12345678 l12345678 m12345678 n12345678 o12345678 p12345678")
-      )
-    });
-    var iter = help.iter();
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("--foo-bar, -f <text>  a12345678 b12345678 c12345678 d12345678 e12345678");
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("                      f12345678 g12345678 h12345678");
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("--baz, -b             i12345678 j12345678 k12345678 l12345678 m12345678");
-
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("                      n12345678 o12345678 p12345678");
-
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
-  }
-
-  @Test
-  void testAddOpts_StoreKeyIsAnyOption() {
-    var help = new Help();
-    help.addOpts(new OptCfg[] {
-      new OptCfg(
+  @Nested
+  class TestsOfCreateOptsHelp {
+    @Test
+    void testWhenCfgHasOnlyOneLongName() {
+      var cfgs = List.of(new OptCfg(names("foo-bar")));
+
+      int[] indentBox = new int[1];
+      var bodies = Help.createOptsHelp(cfgs, indentBox);
+
+      assertThat(bodies.size()).isEqualTo(1);
+      assertThat(bodies.get(0).firstIndent).isEqualTo(0);
+      assertThat(bodies.get(0).text).isEqualTo("--foo-bar");
+      assertThat(indentBox[0]).isEqualTo(11);
+    }
+
+    @Test
+    void testWhenCfgHasOnlyOneLongNameAndDesc() {
+      var cfgs = List.of(new OptCfg(names("foo-bar"), desc("The description of foo-bar.")));
+
+      int[] indentBox = new int[1];
+      var bodies = Help.createOptsHelp(cfgs, indentBox);
+
+      assertThat(bodies.size()).isEqualTo(1);
+      assertThat(bodies.get(0).firstIndent).isEqualTo(0);
+      assertThat(bodies.get(0).text).isEqualTo("--foo-bar  The description of foo-bar.");
+      assertThat(indentBox[0]).isEqualTo(11);
+    }
+
+    @Test
+    void testWhenCfgHasOnlyOneLongNameAndDescAndArgInHelp() {
+      var cfgs = List.of(new OptCfg(
         names("foo-bar"),
-        desc("a12345678 b12345678")
-      ),
-      new OptCfg(
-        storeKey("*"),
-        desc("c12345678 d12345678")
-      )
-    });
-    var iter = help.iter();
+        desc("The description of foo-bar."),
+        argInHelp("<num>")
+      ));
 
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("--foo-bar  a12345678 b12345678");
+      int[] indentBox = new int[1];
+      var bodies = Help.createOptsHelp(cfgs, indentBox);
 
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
-  }
+      assertThat(bodies.size()).isEqualTo(1);
+      assertThat(bodies.get(0).firstIndent).isEqualTo(0);
+      assertThat(bodies.get(0).text).isEqualTo("--foo-bar <num>  The description of foo-bar.");
+      assertThat(indentBox[0]).isEqualTo(17);
+    }
 
-  @Test
-  void testAddOpts_FirstElementInNamesIsAnyOption() {
-    var help = new Help();
-    help.addOpts(new OptCfg[] {
-      new OptCfg(
+    @Test
+    void testWhenCfgHasOnlyOneShortName() {
+      var cfgs = List.of(new OptCfg(names("f")));
+
+      int[] indentBox = new int[1];
+      var bodies = Help.createOptsHelp(cfgs, indentBox);
+
+      assertThat(bodies.size()).isEqualTo(1);
+      assertThat(bodies.get(0).firstIndent).isEqualTo(0);
+      assertThat(bodies.get(0).text).isEqualTo("-f");
+      assertThat(indentBox[0]).isEqualTo(4);
+    }
+
+    @Test
+    void testWhenCfgHasOnlyOneShortNameAndDesc() {
+      var cfgs = List.of(new OptCfg(
+        names("f"),
+        desc("The description of f.")
+      ));
+
+      int[] indentBox = new int[1];
+      var bodies = Help.createOptsHelp(cfgs, indentBox);
+
+      assertThat(bodies.size()).isEqualTo(1);
+      assertThat(bodies.get(0).firstIndent).isEqualTo(0);
+      assertThat(bodies.get(0).text).isEqualTo("-f  The description of f.");
+      assertThat(indentBox[0]).isEqualTo(4);
+    }
+
+    @Test
+    void testWhenCfgHasOnlyOneShortNameAndDescAndArgInHelp() {
+      var cfgs = List.of(new OptCfg(
+        names("f"),
+        desc("The description of f."),
+        argInHelp("<n>")
+      ));
+
+      int[] indentBox = new int[1];
+      var bodies = Help.createOptsHelp(cfgs, indentBox);
+
+      assertThat(bodies.size()).isEqualTo(1);
+      assertThat(bodies.get(0).firstIndent).isEqualTo(0);
+      assertThat(bodies.get(0).text).isEqualTo("-f <n>  The description of f.");
+      assertThat(indentBox[0]).isEqualTo(8);
+    }
+
+    @Test
+    void testWhenIndentIsPositiveAndLongerThanTitle() {
+      var cfgs = List.of(new OptCfg(
         names("foo-bar"),
-        desc("a12345678 b12345678")
-      ),
-      new OptCfg(
-        names("*"),
-        desc("c12345678 d12345678")
-      )
-    });
-    var iter = help.iter();
+        desc("The description of foo-bar."),
+        argInHelp("<num>")
+      ));
 
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("--foo-bar  a12345678 b12345678");
+      int[] indentBox = new int[]{19};
+      var bodies = Help.createOptsHelp(cfgs, indentBox);
 
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
-  }
+      assertThat(bodies.size()).isEqualTo(1);
+      assertThat(bodies.get(0).firstIndent).isEqualTo(0);
+      assertThat(bodies.get(0).text).isEqualTo(
+        "--foo-bar <num>    The description of foo-bar.");
+      assertThat(indentBox[0]).isEqualTo(19);
+    }
 
-  @Test
-  void testAddOpts_StoreKeyIsAnyOption_withIndent() {
-    var help = new Help();
-    help.addOpts(new OptCfg[] {
-      new OptCfg(
-        storeKey("*"),
-        desc("c12345678 d12345678")
-      ),
-      new OptCfg(
+    @Test
+    void testWhenIndentIsPositiveAndShorterThanTitle() {
+      var cfgs = List.of(new OptCfg(
         names("foo-bar"),
-        desc("a12345678 b12345678")
-      )
-    }, 5);
-    var iter = help.iter();
+        desc("The description of foo-bar."),
+        argInHelp("<num>")
+      ));
 
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("--foo-bar");
+      int[] indentBox = new int[]{16};
+      var bodies = Help.createOptsHelp(cfgs, indentBox);
 
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("     a12345678 b12345678");
+      assertThat(bodies.size()).isEqualTo(1);
+      assertThat(bodies.get(0).firstIndent).isEqualTo(0);
+      assertThat(bodies.get(0).text).isEqualTo(
+        "--foo-bar <num>\n                The description of foo-bar.");
+      assertThat(indentBox[0]).isEqualTo(16);
 
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
+      indentBox[0] = 10;
+      bodies = Help.createOptsHelp(cfgs, indentBox);
+
+      assertThat(bodies.size()).isEqualTo(1);
+      assertThat(bodies.get(0).firstIndent).isEqualTo(0);
+      assertThat(bodies.get(0).text).isEqualTo(
+        "--foo-bar <num>\n          The description of foo-bar.");
+      assertThat(indentBox[0]).isEqualTo(10);
+    }
+
+    @Test
+    void testWhenNamesContainsEmptyStrings() {
+      var cfgs = List.of(new OptCfg(
+        names("", "", "f", "", "foo-bar", ""),
+        desc("The description of foo-bar."),
+        argInHelp("<num>")
+      ));
+
+      int[] indentBox = new int[1];
+      var bodies = Help.createOptsHelp(cfgs, indentBox);
+
+      assertThat(bodies.size()).isEqualTo(1);
+      assertThat(bodies.get(0).firstIndent).isEqualTo(8);
+      assertThat(bodies.get(0).text).isEqualTo(
+        "-f,     --foo-bar <num>  The description of foo-bar.");
+      assertThat(indentBox[0]).isEqualTo(8 + 25);
+
+      indentBox[0] = 35;  // longer than title width
+      bodies = Help.createOptsHelp(cfgs, indentBox);
+
+      assertThat(bodies.size()).isEqualTo(1);
+      assertThat(bodies.get(0).firstIndent).isEqualTo(8);
+      assertThat(bodies.get(0).text).isEqualTo(
+        "-f,     --foo-bar <num>    The description of foo-bar.");
+      assertThat(indentBox[0]).isEqualTo(35);
+
+      indentBox[0] = 33;  // equal to title width
+      bodies = Help.createOptsHelp(cfgs, indentBox);
+
+      assertThat(bodies.size()).isEqualTo(1);
+      assertThat(bodies.get(0).firstIndent).isEqualTo(8);
+      assertThat(bodies.get(0).text).isEqualTo(
+        "-f,     --foo-bar <num>  The description of foo-bar.");
+      assertThat(indentBox[0]).isEqualTo(33);
+
+      indentBox[0] = 32;  // shorter than title width
+      bodies = Help.createOptsHelp(cfgs, indentBox);
+
+      assertThat(bodies.size()).isEqualTo(1);
+      assertThat(bodies.get(0).firstIndent).isEqualTo(8);
+      assertThat(bodies.get(0).text).isEqualTo(
+        "-f,     --foo-bar <num>\n" + " ".repeat(32) + "The description of foo-bar.");
+      assertThat(indentBox[0]).isEqualTo(32);
+    }
+
+    @Test
+    void testIgnoreOptCfgsOfWhichStoreKeyAndNamesAreEmpty() {
+      var cfgs = List.of(new OptCfg());
+
+      int[] indentBox = new int[1];
+      var bodies = Help.createOptsHelp(cfgs, indentBox);
+      assertThat(bodies.size()).isEqualTo(0);
+
+      indentBox = new int[]{4};
+      bodies = Help.createOptsHelp(cfgs, indentBox);
+      assertThat(bodies.size()).isEqualTo(0);
+    }
+
+    @Test
+    void testIgnoreOptCfgsOfWhichStoreKeyOrNameIsAsterisk() {
+      var cfgs = List.of(new OptCfg(storeKey("*")));
+
+      int[] indentBox = new int[1];
+      var bodies = Help.createOptsHelp(cfgs, indentBox);
+      assertThat(bodies.size()).isEqualTo(0);
+
+      indentBox = new int[]{4};
+      bodies = Help.createOptsHelp(cfgs, indentBox);
+      assertThat(bodies.size()).isEqualTo(0);
+
+      cfgs = List.of(new OptCfg(names("*")));
+
+      indentBox = new int[1];
+      bodies = Help.createOptsHelp(cfgs, indentBox);
+      assertThat(bodies.size()).isEqualTo(0);
+
+      indentBox = new int[]{4};
+      bodies = Help.createOptsHelp(cfgs, indentBox);
+      assertThat(bodies.size()).isEqualTo(0);
+    }
   }
 
-  @Test
-  void testAddOpts_FirstElementInNamesIsAnyOption_withIndent() {
-    var help = new Help();
-    help.addOpts(new OptCfg[] {
-      new OptCfg(
-        names("*"),
-        desc("c12345678 d12345678")
-      ),
-      new OptCfg(
-        names("foo-bar"),
-        desc("a12345678 b12345678")
-      )
-    }, 5);
-    var iter = help.iter();
+  @Nested
+  class TestsOfHelp {
+    @Test
+    void testDefaultConstructor() {
+      var help = new Help();
+      var iter = help.iter();
+      assertThat(iter.hasNext()).isFalse();
+      assertThat(iter.next()).isEqualTo("");
+      assertThat(iter.hasNext()).isFalse();
+      assertThat(iter.next()).isEqualTo("");
+    }
 
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("--foo-bar");
+    @Test
+    void testAddTextIfOneLineWithZeroWrapping() {
+      var help = new Help();
+      help.addText("abc");
 
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("     a12345678 b12345678");
+      var iter = help.iter();
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("abc");
 
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
-  }
+      assertThat(iter.hasNext()).isFalse();
+      assertThat(iter.next()).isEqualTo("");
 
-  @Test
-  void testNewHelp_ifLineWidthLessThanSumOfMargins() {
-    var help = new Help(71, 10);
-    help.addText("a23456789 b23456789 c23456789");
-    var iter = help.iter();
+      assertThat(iter.hasNext()).isFalse();
+      assertThat(iter.next()).isEqualTo("");
+    }
 
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("");
+    @Test
+    void testAddTextIfOneLineWithWrapping() {
+      int termCols = Term.getCols();
+      String text = "a".repeat(termCols) + "123456";
 
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
-  }
+      var help = new Help();
+      help.addText(text);
 
-  @Test
-  void testAddText_ifLineWidthLessThanSumOfMargins() {
-    var help = new Help(10, 40);
-    help.addText("abcdefg", 10, 10, 10);
-    help.addText("hijklmn", 10, 10);
-    help.addText("opqurstu", 10, 10, 11);
-    var iter = help.iter();
+      var iter = help.iter();
 
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("");
+      assertThat(iter.hasNext()).isTrue();
+      String line = iter.next();
+      assertThat(line).isEqualTo("a".repeat(termCols));
 
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("                    hijklmn");
+      assertThat(iter.hasNext()).isTrue();
+      line = iter.next();
+      assertThat(line).isEqualTo("123456");
 
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("");
+      assertThat(iter.hasNext()).isFalse();
+      assertThat(iter.next()).isEqualTo("");
+    }
 
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
-  }
+    @Test
+    void testAddTextIfMultiLInesWithWrapping() {
+      int termCols = Term.getCols();
+      String text = "a".repeat(termCols) + "123456\n" + "b".repeat(termCols) + "789";;
 
-  @Test
-  void testAddOpts_ifLineWidthLessThanSunOfMargins() {
-    var help = new Help(10, 30);
-    help.addOpts(new OptCfg[] {
-      new OptCfg(
-        names("foo-bar"),
-        desc("This is a description of option.")
-      )
-    }, 10, 10, 20);
-    help.addOpts(new OptCfg[] {
-      new OptCfg(
-        names("baz"),
-        desc("This is a description of option.")
-      )
-    }, 10, 10);
-    help.addOpts(new OptCfg[] {
-      new OptCfg(
-        names("qux"),
-        desc("This is a description of option.")
-      )
-    }, 10, 10, 21);
-    var iter = help.iter();
+      var help = new Help();
+      help.addText(text);
 
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("");
+      var iter = help.iter();
 
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("                    --baz     This is a");
+      assertThat(iter.hasNext()).isTrue();
+      String line = iter.next();
+      assertThat(line).isEqualTo("a".repeat(termCols));
 
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("                              description of");
+      assertThat(iter.hasNext()).isTrue();
+      line = iter.next();
+      assertThat(line).isEqualTo("123456");
 
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("                              option.");
+      assertThat(iter.hasNext()).isTrue();
+      line = iter.next();
+      assertThat(line).isEqualTo("b".repeat(termCols));
 
-    assertThat(iter.hasNext()).isTrue();
-    assertThat(iter.next()).isEqualTo("");
+      assertThat(iter.hasNext()).isTrue();
+      line = iter.next();
+      assertThat(line).isEqualTo("789");
 
-    assertThat(iter.hasNext()).isFalse();
-    assertThat(iter.next()).isEqualTo("");
-  }
+      assertThat(iter.hasNext()).isFalse();
+      assertThat(iter.next()).isEqualTo("");
+    }
 
-  @Test
-  void testPrint_curl() {
-    // The source of the following text is the output of `curl --help` in
-    // curl 7.87.0. (https://curl.se/docs/copyright.html)
+    @Test
+    void testConstructorTakingMargins() {
+      int termCols = Term.getCols();
+      String text = "a".repeat(termCols - 5 - 3) + "12345\n" +
+        "b".repeat(termCols - 5 - 3) + "6789";;
 
-    var help = new Help();
+      var help = new Help(5, 3);
+      help.addText(text);
 
-    help.addText("Usage: curl [options...] <url>");
+      var iter = help.iter();
 
-    help.addOpts(new OptCfg[]{
-      new OptCfg(
-        storeKey("Data"),
-        names("d", "data"),
-        desc("HTTP POST data"),
-        hasArg(true),
-        argInHelp("<data>")
-      ),
-      new OptCfg(
-        storeKey("Fail"),
-        names("f", "fail"),
-        desc("Fail fast with no output on HTTP errors")
-      ),
-      new OptCfg(
-        storeKey("Help"),
-        names("h", "help"),
-        desc("Get help for commands"),
-        hasArg(true),
-        argInHelp("<category>")
-      ),
-      new OptCfg(
-        storeKey("Include"),
-        names("i", "include"),
-        desc("Include protocol response headers in the output")
-      ),
-      new OptCfg(
-        storeKey("Output"),
-        names("o", "output"),
-        desc("Write to file instead of stdout"),
-        hasArg(true),
-        argInHelp("<file>")
-      ),
-      new OptCfg(
-        storeKey("RemoteName"),
-        names("O", "remote-name"),
-        desc("Write output to a file named as the remote file")
-      ),
-      new OptCfg(
-        storeKey("Silent"),
-        names("s", "silent"),
-        desc("Silent mode")
-      ),
-      new OptCfg(
-        storeKey("UploadFile"),
-        names("T", "upload-file"),
-        desc("Transfer local FILE to destination"),
-        hasArg(true),
-        argInHelp("<file>")
-      ),
-      new OptCfg(
-        storeKey("User"),
-        names("u", "user"),
-        desc("Server user and password"),
-        hasArg(true),
-        argInHelp("<user:password>")
-      ),
-      new OptCfg(
-        storeKey("UserAgent"),
-        names("A", "user-agent"),
-        desc("Send User-Agent <name> to server"),
-        hasArg(true),
-        argInHelp("<name>")
-      ),
-      new OptCfg(
-        storeKey("Verbose"),
-        names("v", "verbose"),
-        desc("Make the operation more talkative")
-      ),
-      new OptCfg(
-        storeKey("Version"),
-        names("V", "version"),
-        desc("Show version number and quit")
-      )
-    }, 0, 1);
+      assertThat(iter.hasNext()).isTrue();
+      String line = iter.next();
+      assertThat(line).isEqualTo("     " + "a".repeat(termCols - 5 - 3));
 
-    help.addText("\n" +
-      "This is not the full help, this menu is stripped into categories.\n" +
-      "Use \"--help category\" to get an overview of all categories.\n" +
-      "For all options use the manual or \"--help all\"."
-    );
+      assertThat(iter.hasNext()).isTrue();
+      line = iter.next();
+      assertThat(line).isEqualTo("     12345");
 
-    help.print();
+      assertThat(iter.hasNext()).isTrue();
+      line = iter.next();
+      assertThat(line).isEqualTo("     " + "b".repeat(termCols - 5 - 3));
+
+      assertThat(iter.hasNext()).isTrue();
+      line = iter.next();
+      assertThat(line).isEqualTo("     6789");
+
+      assertThat(iter.hasNext()).isFalse();
+      assertThat(iter.next()).isEqualTo("");
+    }
+
+    @Test
+    void testAddTextWithMargins() {
+      int termCols = Term.getCols();
+      var text = "a".repeat(termCols - 5 - 3) + "12345\n" +
+        "b".repeat(termCols - 5 - 3) + "6789";
+
+      var help = new Help();
+      help.addTextWithMargins(text, 5, 3);
+      var iter = help.iter();
+
+      assertThat(iter.hasNext()).isTrue();
+      var line = iter.next();
+      assertThat(line).isEqualTo("     " + "a".repeat(termCols - 5 - 3));
+
+      assertThat(iter.hasNext()).isTrue();
+      line = iter.next();
+      assertThat(line).isEqualTo("     12345");
+
+      assertThat(iter.hasNext()).isTrue();
+      line = iter.next();
+      assertThat(line).isEqualTo("     " + "b".repeat(termCols - 5 - 3));
+
+      assertThat(iter.hasNext()).isTrue();
+      line = iter.next();
+      assertThat(line).isEqualTo("     6789");
+
+      assertThat(iter.hasNext()).isFalse();
+      line = iter.next();
+      assertThat(line).isEqualTo("");
+    }
+
+    @Test
+    void testAddTextWithIndent() {
+      int termCols = Term.getCols();
+      var text = "a".repeat(termCols) + "12345\n" +
+        "b".repeat(termCols - 8) + "6789";
+
+      var help = new Help();
+      help.addTextWithIndent(text, 8);
+      var iter = help.iter();
+
+      assertThat(iter.hasNext()).isTrue();
+      var line = iter.next();
+      assertThat(line).isEqualTo("a".repeat(termCols));
+
+      assertThat(iter.hasNext()).isTrue();
+      line = iter.next();
+      assertThat(line).isEqualTo("        12345");
+
+      assertThat(iter.hasNext()).isTrue();
+      line = iter.next();
+      assertThat(line).isEqualTo("        " + "b".repeat(termCols - 8));
+
+      assertThat(iter.hasNext()).isTrue();
+      line = iter.next();
+      assertThat(line).isEqualTo("        6789");
+
+      assertThat(iter.hasNext()).isFalse();
+      line = iter.next();
+      assertThat(line).isEqualTo("");
+    }
+
+    @Test
+    void testAddTextWithIndentAndMargins() {
+      int termCols = Term.getCols();
+      var text = "a".repeat(termCols - 1 - 2) + "12345\n" +
+        "b".repeat(termCols - 8 - 1 -2) + "6789";
+
+      var help = new Help();
+      help.addTextWithIndentAndMargins(text, 8, 1, 2);
+      var iter = help.iter();
+
+      assertThat(iter.hasNext()).isTrue();
+      var line = iter.next();
+      assertThat(line).isEqualTo(" " + "a".repeat(termCols - 1 - 2));
+
+      assertThat(iter.hasNext()).isTrue();
+      line = iter.next();
+      assertThat(line).isEqualTo("         12345");
+
+      assertThat(iter.hasNext()).isTrue();
+      line = iter.next();
+      assertThat(line).isEqualTo("         " + "b".repeat(termCols - 8 - 1 - 2));
+
+      assertThat(iter.hasNext()).isTrue();
+      line = iter.next();
+      assertThat(line).isEqualTo("         6789");
+
+      assertThat(iter.hasNext()).isFalse();
+      line = iter.next();
+      assertThat(line).isEqualTo("");
+    }
+
+    @Test
+    void testAddTextIfTextIsEmpty() {
+      var help = new Help();
+      help.addText("");
+      var iter = help.iter();
+
+      assertThat(iter.hasNext()).isTrue();
+      var line = iter.next();
+      assertThat(line).isEqualTo("");
+
+      assertThat(iter.hasNext()).isFalse();
+      line = iter.next();
+      assertThat(line).isEqualTo("");
+    }
+
+    @Test
+    void testAddTextMultipleTimes() {
+      int termCols = Term.getCols();
+
+      var text = "a".repeat(termCols - 4 - 3) +
+        "b".repeat(termCols - 4 - 5 - 3) +
+        "c".repeat(termCols - 4 - 5 - 3);
+
+      var help = new Help(1, 1);
+      help.addTextWithIndentAndMargins(text, 5, 3, 2);
+
+      text = "d".repeat(termCols - 2 - 2) +
+        "e".repeat(termCols - 2 - 5 - 2) +
+        "f".repeat(termCols - 2 - 5 - 2);
+
+      help.addTextWithIndentAndMargins(text, 5, 1, 1);
+
+      var iter = help.iter();
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.hasNext()).isTrue();
+      var line = iter.next();
+      assertThat(line).isEqualTo("    " + "a".repeat(termCols - 7));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.hasNext()).isTrue();
+      line = iter.next();
+      assertThat(line).isEqualTo("         " + "b".repeat(termCols - 12));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.hasNext()).isTrue();
+      line = iter.next();
+      assertThat(line).isEqualTo("         " + "c".repeat(termCols - 12));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.hasNext()).isTrue();
+      line = iter.next();
+      assertThat(line).isEqualTo("  " + "d".repeat(termCols - 4));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.hasNext()).isTrue();
+      line = iter.next();
+      assertThat(line).isEqualTo("       " + "e".repeat(termCols - 9));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.hasNext()).isTrue();
+      line = iter.next();
+      assertThat(line).isEqualTo("       " + "f".repeat(termCols - 9));
+
+      assertThat(iter.hasNext()).isFalse();
+      assertThat(iter.hasNext()).isFalse();
+    }
+
+    @Test
+    void testAddTextsIfArrayIsEmpty() {
+      var help = new Help();
+      help.addTexts(new String[0]);
+
+      var iter = help.iter();
+
+      assertThat(iter.hasNext()).isFalse();
+      var line = iter.next();
+      assertThat(line).isEqualTo("");
+
+      assertThat(iter.hasNext()).isFalse();
+      line = iter.next();
+      assertThat(line).isEqualTo("");
+    }
+
+    @Test
+    void testAddTextsIfListIsEmpty() {
+      var help = new Help();
+      help.addTexts(new ArrayList<>(0));
+
+      var iter = help.iter();
+
+      assertThat(iter.hasNext()).isFalse();
+      var line = iter.next();
+      assertThat(line).isEqualTo("");
+
+      assertThat(iter.hasNext()).isFalse();
+      line = iter.next();
+      assertThat(line).isEqualTo("");
+    }
+
+    @Test
+    void testAddTextsIfArrayHasAText() {
+      int termCols = Term.getCols();
+
+      var texts = new String[]{
+        "a".repeat(termCols) + "b".repeat(termCols) + "c".repeat(termCols)
+      };
+
+      var help = new Help();
+      help.addTexts(texts);
+
+      var iter = help.iter();
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("a".repeat(termCols));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("b".repeat(termCols));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("c".repeat(termCols));
+
+      assertThat(iter.hasNext()).isFalse();
+      assertThat(iter.next()).isEqualTo("");
+    }
+
+    @Test
+    void testAddTextsIfListHasAText() {
+      int termCols = Term.getCols();
+
+      var texts = new ArrayList<String>();
+      texts.add("a".repeat(termCols) + "b".repeat(termCols) + "c".repeat(termCols));
+
+      var help = new Help();
+      help.addTexts(texts);
+
+      var iter = help.iter();
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("a".repeat(termCols));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("b".repeat(termCols));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("c".repeat(termCols));
+
+      assertThat(iter.hasNext()).isFalse();
+      assertThat(iter.next()).isEqualTo("");
+    }
+
+    @Test
+    void testAddTextsIfArrayHasMultipleTexts() {
+      int termCols = Term.getCols();
+
+      var texts = new String[]{
+        "a".repeat(termCols) + "b".repeat(termCols) + "c".repeat(termCols),
+        "d".repeat(termCols) + "e".repeat(termCols) + "f".repeat(termCols)
+      };
+
+      var help = new Help();
+      help.addTexts(texts);
+
+      var iter = help.iter();
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("a".repeat(termCols));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("b".repeat(termCols));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("c".repeat(termCols));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("d".repeat(termCols));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("e".repeat(termCols));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("f".repeat(termCols));
+
+      assertThat(iter.hasNext()).isFalse();
+      assertThat(iter.next()).isEqualTo("");
+    }
+
+    @Test
+    void testAddTextsIfListHasMultipleTexts() {
+      int termCols = Term.getCols();
+
+      var texts = new ArrayList<String>();
+      texts.add("a".repeat(termCols) + "b".repeat(termCols) + "c".repeat(termCols));
+      texts.add("d".repeat(termCols) + "e".repeat(termCols) + "f".repeat(termCols));
+
+      var help = new Help();
+      help.addTexts(texts);
+
+      var iter = help.iter();
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("a".repeat(termCols));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("b".repeat(termCols));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("c".repeat(termCols));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("d".repeat(termCols));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("e".repeat(termCols));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("f".repeat(termCols));
+
+      assertThat(iter.hasNext()).isFalse();
+      assertThat(iter.next()).isEqualTo("");
+    }
+
+    @Test
+    void testAddTextsWithIndent_array() {
+      int termCols = Term.getCols();
+
+      var texts = new String[]{
+        "a".repeat(termCols) + "b".repeat(termCols - 5) + "c".repeat(termCols - 5),
+        "d".repeat(termCols) + "e".repeat(termCols - 5) + "f".repeat(termCols - 5)
+      };
+
+      var help = new Help();
+      help.addTextsWithIndent(texts, 5);
+
+      var iter = help.iter();
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("a".repeat(termCols));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("     " + "b".repeat(termCols - 5));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("     " + "c".repeat(termCols - 5));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("d".repeat(termCols));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("     " + "e".repeat(termCols - 5));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("     " + "f".repeat(termCols - 5));
+
+      assertThat(iter.hasNext()).isFalse();
+      assertThat(iter.next()).isEqualTo("");
+    }
+
+    @Test
+    void testAddTextsWithIndent_list() {
+      int termCols = Term.getCols();
+
+      var texts = new ArrayList<String>();
+      texts.add("a".repeat(termCols) + "b".repeat(termCols - 5) + "c".repeat(termCols - 5));
+      texts.add("d".repeat(termCols) + "e".repeat(termCols - 5) + "f".repeat(termCols - 5));
+
+      var help = new Help();
+      help.addTextsWithIndent(texts, 5);
+
+      var iter = help.iter();
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("a".repeat(termCols));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("     " + "b".repeat(termCols - 5));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("     " + "c".repeat(termCols - 5));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("d".repeat(termCols));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("     " + "e".repeat(termCols - 5));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("     " + "f".repeat(termCols - 5));
+
+      assertThat(iter.hasNext()).isFalse();
+      assertThat(iter.next()).isEqualTo("");
+    }
+
+    @Test
+    void testAddTextsWithMargins_array() {
+      int termCols = Term.getCols();
+
+      var texts = new String[]{
+        "a".repeat(termCols - 3 - 3) + "b".repeat(termCols - 3 - 3) + "c".repeat(termCols - 3 - 3),
+        "d".repeat(termCols - 3 - 3) + "e".repeat(termCols - 3 - 3) + "f".repeat(termCols - 3 - 3)
+      };
+
+      var help = new Help(1, 1);
+      help.addTextsWithMargins(texts, 2, 2);
+
+      var iter = help.iter();
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("   " + "a".repeat(termCols - 6));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("   " + "b".repeat(termCols - 6));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("   " + "c".repeat(termCols - 6));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("   " + "d".repeat(termCols - 6));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("   " + "e".repeat(termCols - 6));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("   " + "f".repeat(termCols - 6));
+
+      assertThat(iter.hasNext()).isFalse();
+      assertThat(iter.next()).isEqualTo("");
+    }
+
+    @Test
+    void testAddTextsWithMargins_list() {
+      int termCols = Term.getCols();
+
+      var texts = List.of(
+        "a".repeat(termCols - 3 - 3) + "b".repeat(termCols - 3 - 3) + "c".repeat(termCols - 3 - 3),
+        "d".repeat(termCols - 3 - 3) + "e".repeat(termCols - 3 - 3) + "f".repeat(termCols - 3 - 3)
+      );
+
+      var help = new Help(1, 1);
+      help.addTextsWithMargins(texts, 2, 2);
+
+      var iter = help.iter();
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("   " + "a".repeat(termCols - 6));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("   " + "b".repeat(termCols - 6));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("   " + "c".repeat(termCols - 6));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("   " + "d".repeat(termCols - 6));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("   " + "e".repeat(termCols - 6));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("   " + "f".repeat(termCols - 6));
+
+      assertThat(iter.hasNext()).isFalse();
+      assertThat(iter.next()).isEqualTo("");
+    }
+
+    @Test
+    void testAddTextsWithIndentAndMargins_array() {
+      int termCols = Term.getCols();
+
+      var texts = new String[]{
+        "a".repeat(termCols - 3 - 3) + "b".repeat(termCols - 3 - 5 - 3) +
+        "c".repeat(termCols - 3 - 5 - 3),
+        "d".repeat(termCols - 3 - 3) + "e".repeat(termCols - 3 - 5 - 3) +
+        "f".repeat(termCols - 3 - 5 - 3)
+      };
+
+      var help = new Help(1, 1);
+      help.addTextsWithIndentAndMargins(texts, 5, 2, 2);
+
+      var iter = help.iter();
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("   " + "a".repeat(termCols - 6));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("        " + "b".repeat(termCols - 11));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("        " + "c".repeat(termCols - 11));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("   " + "d".repeat(termCols - 6));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("        " + "e".repeat(termCols - 11));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("        " + "f".repeat(termCols - 11));
+
+      assertThat(iter.hasNext()).isFalse();
+      assertThat(iter.next()).isEqualTo("");
+    }
+
+    @Test
+    void testAddTextsWithIndentAndMargins_list() {
+      int termCols = Term.getCols();
+
+      var texts = List.of(
+        "a".repeat(termCols - 3 - 3) + "b".repeat(termCols - 3 - 5 - 3) +
+        "c".repeat(termCols - 3 - 5 - 3),
+        "d".repeat(termCols - 3 - 3) + "e".repeat(termCols - 3 - 5 - 3) +
+        "f".repeat(termCols - 3 - 5 - 3)
+      );
+
+      var help = new Help(1, 1);
+      help.addTextsWithIndentAndMargins(texts, 5, 2, 2);
+
+      var iter = help.iter();
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("   " + "a".repeat(termCols - 6));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("        " + "b".repeat(termCols - 11));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("        " + "c".repeat(termCols - 11));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("   " + "d".repeat(termCols - 6));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("        " + "e".repeat(termCols - 11));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("        " + "f".repeat(termCols - 11));
+
+      assertThat(iter.hasNext()).isFalse();
+      assertThat(iter.next()).isEqualTo("");
+    }
+
+    @Test
+    void testAddOptsWithNoWrapping() {
+      var help = new Help();
+      help.addOpts(new OptCfg[]{
+        new OptCfg(names("foo-bar"), desc("This is a description of option."))
+      });
+
+      var iter = help.iter();
+      assertThat(iter.next()).isEqualTo("--foo-bar  This is a description of option.");
+      assertThat(iter.next()).isEqualTo("");
+    }
+
+    @Test
+    void testAddOptsWithWrapping() {
+      int cols = Term.getCols();
+
+      var help = new Help();
+      help.addOpts(new OptCfg[]{
+        new OptCfg(names("foo-bar"), desc("a".repeat(cols - 11) + " bcdef"))
+      });
+
+      var iter = help.iter();
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("--foo-bar  " + "a".repeat(cols - 11));
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("           bcdef");
+
+      assertThat(iter.hasNext()).isFalse();
+      assertThat(iter.next()).isEqualTo("");
+    }
+
+    @Test
+    void testConstructorTakingMarginsAndAddOpts() {
+      int cols = Term.getCols();
+
+      var help = new Help(4, 2);
+
+      help.addOpts(new OptCfg[]{
+        new OptCfg(
+          names("foo-bar"),
+          desc("a".repeat(cols - 11 - 4 - 2) + " " + "b".repeat(cols - 11 - 4 - 2) + "ccc")
+        )
+      });
+
+      var iter = help.iter();
+
+      assertThat(iter.next()).isEqualTo("    --foo-bar  " + "a".repeat(cols - 11 - 4 - 2));
+      assertThat(iter.next()).isEqualTo("               " + "b".repeat(cols - 11 - 4 - 2));
+      assertThat(iter.next()).isEqualTo("               " + "ccc");
+
+      assertThat(iter.hasNext()).isFalse();
+      assertThat(iter.next()).isEqualTo("");
+    }
+
+    @Test
+    void testAddOptsWithMargins_array() {
+      int cols = Term.getCols();
+
+      var help = new Help();
+      help.addOptsWithMargins(new OptCfg[]{
+        new OptCfg(
+          names("foo-bar"),
+          desc("a".repeat(cols - 11 - 5 - 4) + " " + "b".repeat(cols - 11 - 5 - 4) + "ccc")
+        )
+      }, 5, 4);
+
+      var iter = help.iter();
+
+      assertThat(iter.next()).isEqualTo("     --foo-bar  " + "a".repeat(cols - 11 - 5 - 4));
+      assertThat(iter.next()).isEqualTo("                " + "b".repeat(cols - 11 - 5 - 4));
+      assertThat(iter.next()).isEqualTo("                " + "ccc");
+      assertThat(iter.next()).isEqualTo("");
+    }
+
+    @Test
+    void testAddOptsWithMargins_list() {
+      int cols = Term.getCols();
+
+      var help = new Help();
+      help.addOptsWithMargins(List.of(
+        new OptCfg(
+          names("foo-bar"),
+          desc("a".repeat(cols - 11 - 5 - 4) + " " + "b".repeat(cols - 11 - 5 - 4) + "ccc")
+        )
+      ), 5, 4);
+
+      var iter = help.iter();
+
+      assertThat(iter.next()).isEqualTo("     --foo-bar  " + "a".repeat(cols - 11 - 5 - 4));
+      assertThat(iter.next()).isEqualTo("                " + "b".repeat(cols - 11 - 5 - 4));
+      assertThat(iter.next()).isEqualTo("                " + "ccc");
+      assertThat(iter.next()).isEqualTo("");
+    }
+
+    @Test
+    void testAddOptsWithMarginsByBothConstructorAndAddTextWithMargins() {
+      int cols = Term.getCols();
+
+      var help = new Help(4, 2);
+      help.addOptsWithMargins(new OptCfg[]{
+        new OptCfg(
+          names("foo-bar"),
+          desc("a".repeat(cols - 11 - 5 - 4) + " " + "b".repeat(cols - 11 - 5 - 4) + "ccc")
+        )
+      }, 1, 2);
+
+      var iter = help.iter();
+
+      assertThat(iter.next()).isEqualTo("     --foo-bar  " + "a".repeat(cols - 11 - 5 - 4));
+      assertThat(iter.next()).isEqualTo("                " + "b".repeat(cols - 11 - 5 - 4));
+      assertThat(iter.next()).isEqualTo("                " + "ccc");
+      assertThat(iter.next()).isEqualTo("");
+    }
+
+    @Test
+    void testAddOptsWithIndentIfIndentIsLongerThanTitle() {
+      int cols = Term.getCols();
+
+      var help = new Help();
+      help.addOptsWithIndent(new OptCfg[]{
+        new OptCfg(
+          names("foo-bar"),
+          desc("a".repeat(cols - 12) + " " + "b".repeat(cols - 12) + "ccc")
+        )
+      }, 12);
+
+      var iter = help.iter();
+
+      assertThat(iter.next()).isEqualTo("--foo-bar   " + "a".repeat(cols - 12));
+      assertThat(iter.next()).isEqualTo("            " + "b".repeat(cols - 12));
+      assertThat(iter.next()).isEqualTo("            " + "ccc");
+      assertThat(iter.next()).isEqualTo("");
+    }
+
+    @Test
+    void testAddOptsWithIndentIfIndentIsShorterThanTitle() {
+      int cols = Term.getCols();
+
+      var help = new Help();
+      help.addOptsWithIndent(new OptCfg[]{
+        new OptCfg(
+          names("foo-bar"),
+          desc("a".repeat(cols - 10) + " " + "b".repeat(10))
+        )
+      }, 10);
+
+      var iter = help.iter();
+
+      assertThat(iter.next()).isEqualTo("--foo-bar");
+      assertThat(iter.next()).isEqualTo("          " + "a".repeat(cols - 10));
+      assertThat(iter.next()).isEqualTo("          " + "b".repeat(10));
+      assertThat(iter.next()).isEqualTo("");
+    }
+
+    @Test
+    void testAddOptsWithIndentAndMargins_array() {
+      int cols = Term.getCols();
+
+      var help = new Help();
+      help.addOptsWithIndentAndMargins(new OptCfg[]{
+        new OptCfg(names("foo-bar"), desc("a".repeat(cols)))
+      }, 6, 4, 2);
+
+      var iter = help.iter();
+
+      assertThat(iter.next()).isEqualTo("    --foo-bar");
+      assertThat(iter.next()).isEqualTo("          " + "a".repeat(cols - 6 - 4 -2));
+      assertThat(iter.next()).isEqualTo("          " + "a".repeat(6 + 4 + 2));
+      assertThat(iter.next()).isEqualTo("");
+    }
+
+    @Test
+    void testAddOptsWithIndentAndMargins_list() {
+      int cols = Term.getCols();
+
+      var help = new Help();
+      help.addOptsWithIndentAndMargins(List.of(
+        new OptCfg(names("foo-bar"), desc("a".repeat(cols)))
+      ), 6, 4, 2);
+
+      var iter = help.iter();
+
+      assertThat(iter.next()).isEqualTo("    --foo-bar");
+      assertThat(iter.next()).isEqualTo("          " + "a".repeat(cols - 6 - 4 -2));
+      assertThat(iter.next()).isEqualTo("          " + "a".repeat(6 + 4 + 2));
+      assertThat(iter.next()).isEqualTo("");
+    }
+
+    @Test
+    void testAddOptsIfOptsAreMultiple() {
+      int cols = Term.getCols();
+
+      var help = new Help();
+      help.addOpts(new OptCfg[]{
+        new OptCfg(
+          names("foo-bar", "f"),
+          hasArg(true),
+          desc("a".repeat(cols - 22) + " " + "b".repeat(cols - 22) + "ccc"),
+          argInHelp("<text>")
+        ),
+        new OptCfg(
+          names("baz", "b"),
+          desc("d".repeat(cols - 22) + " " + "e".repeat(cols - 22) + "fff")
+        )
+      });
+
+      var iter = help.iter();
+
+      assertThat(iter.next()).isEqualTo("--foo-bar, -f <text>  " + "a".repeat(cols - 22));
+      assertThat(iter.next()).isEqualTo("                      " + "b".repeat(cols - 22));
+      assertThat(iter.next()).isEqualTo("                      " + "ccc");
+      assertThat(iter.next()).isEqualTo("--baz, -b             " + "d".repeat(cols - 22));
+      assertThat(iter.next()).isEqualTo("                      " + "e".repeat(cols - 22));
+      assertThat(iter.next()).isEqualTo("                      " + "fff");
+      assertThat(iter.next()).isEqualTo("");
+    }
+
+    @Test
+    void testAddOptsIfNamesAreEmptyAndStoreKeyIsSpecified() {
+      var help = new Help();
+      help.addOpts(new OptCfg[]{
+        new OptCfg(storeKey("foo"), desc("description")),
+        new OptCfg(storeKey("bar"), names("", ""), desc("description"))
+      });
+
+      var iter = help.iter();
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("--foo          description");
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("        --bar  description");
+
+      assertThat(iter.hasNext()).isFalse();
+      assertThat(iter.hasNext()).isFalse();
+      assertThat(iter.next()).isEqualTo("");
+    }
+
+    @Test
+    void testAddOptsIfStoreKeyIsAnyOption() {
+      var help = new Help();
+      help.addOpts(new OptCfg[]{
+        new OptCfg(storeKey("foo"), desc("description")),
+        new OptCfg(storeKey("*"), desc("any option"))
+      });
+
+      var iter = help.iter();
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("--foo  description");
+
+      assertThat(iter.hasNext()).isFalse();
+      assertThat(iter.hasNext()).isFalse();
+      assertThat(iter.next()).isEqualTo("");
+    }
+
+    @Test
+    void testAddOptsIfFirstElementOfNamesIsAnyOption() {
+      var help = new Help();
+      help.addOpts(new OptCfg[]{
+        new OptCfg(names("foo-bar"), desc("description")),
+        new OptCfg(names("*"), desc("any option"))
+      });
+
+      var iter = help.iter();
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("--foo-bar  description");
+
+      assertThat(iter.hasNext()).isFalse();
+      assertThat(iter.hasNext()).isFalse();
+      assertThat(iter.next()).isEqualTo("");
+    }
+
+    @Test
+    void testAddOptsWithIndentIfIndentIsLongerThanLineWidth() {
+      int cols = Term.getCols();
+
+      var help = new Help();
+      help.addOptsWithIndent(new OptCfg[]{
+        new OptCfg(names("foo-bar"), desc("description")),
+        new OptCfg(names("baz"), desc("description"))
+      }, cols + 1);
+
+      var iter = help.iter();
+
+      assertThat(iter.hasNext()).isFalse();
+      assertThat(iter.next()).isEqualTo("");
+
+      assertThat(iter.hasNext()).isFalse();
+      assertThat(iter.next()).isEqualTo("");
+    }
+
+    @Test
+    void testAddOptsWithMarginsIfSumOfMarginsAreEqualToLineWidth() {
+      int cols = Term.getCols();
+
+      var help = new Help();
+      help.addOptsWithMargins(new OptCfg[]{
+        new OptCfg(names("foo-bar"), desc("description")),
+        new OptCfg(names("baz"), desc("description"))
+      }, cols - 1, 1);
+
+      var iter = help.iter();
+
+      assertThat(iter.hasNext()).isFalse();
+      assertThat(iter.next()).isEqualTo("");
+
+      assertThat(iter.hasNext()).isFalse();
+      assertThat(iter.next()).isEqualTo("");
+    }
+
+    @Test
+    void testAddOptsIfNamesContainsEmptyStrings() {
+      var help = new Help();
+      help.addOpts(new OptCfg[]{
+        new OptCfg(names("", "f", "foo-bar", "", ""), desc("description")),
+        new OptCfg(names("b", "", "z", "baz"), desc("description"))
+      });
+
+      var iter = help.iter();
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("    -f, --foo-bar  description");
+
+      assertThat(iter.hasNext()).isTrue();
+      assertThat(iter.next()).isEqualTo("-b,     -z, --baz  description");
+
+      assertThat(iter.hasNext()).isFalse();
+      assertThat(iter.next()).isEqualTo("");
+    }
+
+    @Test
+    void testHelpOfCurl() {
+      // The source of the following text is the output of `curl --help` in
+      // curl 7.87.0. (https://curl.se/docs/copyright.html)
+      var help = new Help();
+      help.addText("Usage: curl [options...] <url>");
+
+      help.addOptsWithMargins(new OptCfg[]{
+        new OptCfg(
+          storeKey("data"),
+          names("d", "data"),
+          hasArg(true),
+          desc("HTTP POST data"),
+          argInHelp("<data>")),
+        new OptCfg(
+          storeKey("fail"),
+          names("f", "fail"),
+          desc("Fail fast with no output on HTTP errors")),
+        new OptCfg(
+          storeKey("help"),
+          names("h", "help"),
+          hasArg(true),
+          desc("Get help for commands"),
+          argInHelp("<category>")),
+        new OptCfg(
+          storeKey("include"),
+          names("i", "include"),
+          desc("Include protocol response headers in the output")),
+        new OptCfg(
+          storeKey("output"),
+          names("o", "output"),
+          hasArg(true),
+          desc("Write to file instead of stdout"),
+          argInHelp("<file>")),
+        new OptCfg(
+          storeKey("removeName"),
+          names("O", "remove-name"),
+          desc("Write output to a file named as the remote file")),
+        new OptCfg(
+          storeKey("silent"),
+          names("s", "silent"),
+          desc("Silent mode")),
+        new OptCfg(
+          storeKey("uploadFile"),
+          names("T", "upload-file"),
+          hasArg(true),
+          desc("Transfer local FILE to destination"),
+          argInHelp("<file>")),
+        new OptCfg(
+          storeKey("user"),
+          names("u", "user"),
+          hasArg(true),
+          desc("Server user and password"),
+          argInHelp("<user:password>")),
+        new OptCfg(
+          storeKey("userAgent"),
+          names("A", "user-agent"),
+          hasArg(true),
+          desc("Send User-Agent <name> to server"),
+          argInHelp("<name>")),
+        new OptCfg(
+          storeKey("verbose"),
+          names("v", "verbose"),
+          desc("Make the operation more talkative")),
+        new OptCfg(
+          storeKey("version"),
+          names("V", "version"),
+          desc("Show version number and quit")),
+      }, 1, 0);
+
+      help.addText(
+        "\n" +
+        "This is not the full help, this menu is stripped into categories.\n" +
+        "Use \"--help category\" to get an overview of all categories.\n" +
+        "For all options use the manual or \"--help all\".");
+      
+      help.print();
+    }
   }
 }
