@@ -1,580 +1,774 @@
 package com.github.sttk.cliargs;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.assertj.core.api.Assertions.fail;
+
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import com.github.sttk.exception.ReasonedException;
-import com.github.sttk.cliargs.CliArgs.OptionHasInvalidChar;
-import com.github.sttk.cliargs.CliArgs.InvalidOption;
-
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.HashMap;
+import com.github.sttk.cliargs.exceptions.OptionContainsInvalidChar;
 
 @SuppressWarnings("missing-explicit-ctor")
 public class ParseTest {
 
-  @Test
-  void testParse_zeroArg() {
-    var cliargs = new CliArgs("/path/to/app", new String[0]);
-
-    var result = cliargs.parse();
-
-    assertThat(result.exception()).isNull();
-
-    var cmd = result.cmd();
-    assertThat(cmd.getName()).isEqualTo("app");
-    assertThat(cmd.getArgs()).isEmpty();
-
-    assertThat(cmd.hasOpt("a")).isFalse();
-    assertThat(cmd.hasOpt("alphabet")).isFalse();
-    assertThat(cmd.hasOpt("s")).isFalse();
-
-    assertThat((String)cmd.getOptArg("a")).isNull();
-    assertThat((String)cmd.getOptArg("alphabet")).isNull();
-    assertThat((String)cmd.getOptArg("s")).isNull();
-    assertThat((String)cmd.getOptArg("silent")).isNull();
-
-    assertThat((List<?>)cmd.getOptArgs("a")).isEmpty();
-    assertThat((List<?>)cmd.getOptArgs("alphabet")).isEmpty();
-    assertThat((List<?>)cmd.getOptArgs("s")).isEmpty();
-    assertThat((List<?>)cmd.getOptArgs("silent")).isEmpty();
-  }
-
-  @Test
-  void testParse_oneNonOptArg() {
-    var cliargs = new CliArgs("path/to/app", new String[]{"abcd"});
-
-    var result = cliargs.parse();
-
-    assertThat(result.exception()).isNull();
-
-    var cmd = result.cmd();
-    assertThat(cmd.getName()).isEqualTo("app");
-    assertThat(cmd.getArgs()).containsExactly("abcd");
-
-    assertThat(cmd.hasOpt("a")).isFalse();
-    assertThat(cmd.hasOpt("alphabet")).isFalse();
-    assertThat(cmd.hasOpt("s")).isFalse();
-    assertThat(cmd.hasOpt("silent")).isFalse();
-
-    assertThat((String)cmd.getOptArg("a")).isNull();
-    assertThat((String)cmd.getOptArg("alphabet")).isNull();
-    assertThat((String)cmd.getOptArg("s")).isNull();
-    assertThat((String)cmd.getOptArg("silent")).isNull();
-
-    assertThat((List<?>)cmd.getOptArgs("a")).isEmpty();
-    assertThat((List<?>)cmd.getOptArgs("alphabet")).isEmpty();
-    assertThat((List<?>)cmd.getOptArgs("s")).isEmpty();
-    assertThat((List<?>)cmd.getOptArgs("silent")).isEmpty();
-  }
-
-  @Test
-  void testParse_oneLongOpt() {
-    var args = new String[]{"--silent"};
-    var cliargs = new CliArgs("app", args);
-
-    var result = cliargs.parse();
-
-    assertThat(result.exception()).isNull();
-
-    var cmd = result.cmd();
-    assertThat(cmd.getName()).isEqualTo("app");
-    assertThat(cmd.getArgs()).isEmpty();
-
-    assertThat(cmd.hasOpt("a")).isFalse();
-    assertThat(cmd.hasOpt("alphabet")).isFalse();
-    assertThat(cmd.hasOpt("s")).isFalse();
-    assertThat(cmd.hasOpt("silent")).isTrue();
-
-    assertThat((String)cmd.getOptArg("a")).isNull();
-    assertThat((String)cmd.getOptArg("alphabet")).isNull();
-    assertThat((String)cmd.getOptArg("s")).isNull();
-    assertThat((String)cmd.getOptArg("silent")).isNull();
-
-    assertThat((List<?>)cmd.getOptArgs("a")).isEmpty();
-    assertThat((List<?>)cmd.getOptArgs("alphabet")).isEmpty();
-    assertThat((List<?>)cmd.getOptArgs("s")).isEmpty();
-    assertThat((List<?>)cmd.getOptArgs("silent")).isEmpty();
-  }
-
-  @Test
-  void testParse_oneLongOptWithArg() {
-    var args = new String[]{"--alphabet=ABC"};
-    var cliargs = new CliArgs("path/to/app", args);
-
-    var result = cliargs.parse();
-
-    assertThat(result.exception()).isNull();
-
-    var cmd = result.cmd();
-    assertThat(cmd.getName()).isEqualTo("app");
-    assertThat(cmd.getArgs()).isEmpty();
-
-    assertThat(cmd.hasOpt("a")).isFalse();
-    assertThat(cmd.hasOpt("alphabet")).isTrue();
-    assertThat(cmd.hasOpt("s")).isFalse();
-    assertThat(cmd.hasOpt("silent")).isFalse();
-
-    assertThat((String)cmd.getOptArg("a")).isNull();
-    assertThat((String)cmd.getOptArg("alphabet")).isEqualTo("ABC");
-    assertThat((String)cmd.getOptArg("s")).isNull();
-    assertThat((String)cmd.getOptArg("silent")).isNull();
-
-    assertThat((List<?>)cmd.getOptArgs("a")).isEmpty();
-    List<String> alphabet = cmd.getOptArgs("alphabet");
-    assertThat(alphabet).containsExactly("ABC");
-    assertThat((List<?>)cmd.getOptArgs("s")).isEmpty();
-    assertThat((List<?>)cmd.getOptArgs("silent")).isEmpty();
-  }
-
-  @Test
-  void testParse_oneShortOpt() {
-    var args = new String[]{"-s"};
-    var cliargs = new CliArgs("path/to/app", args);
-
-    var result = cliargs.parse();
-
-    assertThat(result.exception()).isNull();
-
-    var cmd = result.cmd();
-    assertThat(cmd.getName()).isEqualTo("app");
-    assertThat(cmd.getArgs()).isEmpty();
-
-    assertThat(cmd.hasOpt("a")).isFalse();
-    assertThat(cmd.hasOpt("alphabet")).isFalse();
-    assertThat(cmd.hasOpt("s")).isTrue();
-    assertThat(cmd.hasOpt("silent")).isFalse();
-
-    assertThat((String)cmd.getOptArg("a")).isNull();
-    assertThat((String)cmd.getOptArg("alphabet")).isNull();
-    assertThat((String)cmd.getOptArg("s")).isNull();
-    assertThat((String)cmd.getOptArg("silent")).isNull();
-
-    assertThat((List<?>)cmd.getOptArgs("a")).isEmpty();
-    assertThat((List<?>)cmd.getOptArgs("alphabet")).isEmpty();
-    assertThat((List<?>)cmd.getOptArgs("s")).isEmpty();
-    assertThat((List<?>)cmd.getOptArgs("silent")).isEmpty();
-  }
-
-  @Test
-  void testParse_oneShortOptWithArg() {
-    var args = new String[]{"-a=123"};
-    var cliargs = new CliArgs("path/to/app", args);
-
-    var result = cliargs.parse();
-
-    assertThat(result.exception()).isNull();
-
-    var cmd = result.cmd();
-    assertThat(cmd.getName()).isEqualTo("app");
-    assertThat(cmd.getArgs()).isEmpty();
-
-    assertThat(cmd.hasOpt("a")).isTrue();
-    assertThat(cmd.hasOpt("alphabet")).isFalse();
-    assertThat(cmd.hasOpt("s")).isFalse();
-    assertThat(cmd.hasOpt("silent")).isFalse();
-
-    assertThat((String)cmd.getOptArg("a")).isEqualTo("123");
-    assertThat((String)cmd.getOptArg("alphabet")).isNull();
-    assertThat((String)cmd.getOptArg("s")).isNull();
-    assertThat((String)cmd.getOptArg("silent")).isNull();
-
-    List<String> a = cmd.getOptArgs("a");
-    assertThat(a).containsExactly("123");
-    assertThat((List<?>)cmd.getOptArgs("alphabet")).isEmpty();
-    assertThat((List<?>)cmd.getOptArgs("s")).isEmpty();
-    assertThat((List<?>)cmd.getOptArgs("silent")).isEmpty();
-  }
-
-  @Test
-  void testParse_oneArgByMultipleShortOpts() {
-    var args = new String[]{"-sa"};
-    var cliargs = new CliArgs("app", args);
-
-    var result = cliargs.parse();
-
-    assertThat(result.exception()).isNull();
-
-    var cmd = result.cmd();
-    assertThat(cmd.getName()).isEqualTo("app");
-    assertThat(cmd.getArgs()).isEmpty();
-
-    assertThat(cmd.hasOpt("a")).isTrue();
-    assertThat(cmd.hasOpt("alphabet")).isFalse();
-    assertThat(cmd.hasOpt("s")).isTrue();
-    assertThat(cmd.hasOpt("silent")).isFalse();
-
-    assertThat((String)cmd.getOptArg("a")).isNull();
-    assertThat((String)cmd.getOptArg("alphabet")).isNull();
-    assertThat((String)cmd.getOptArg("s")).isNull();
-    assertThat((String)cmd.getOptArg("silent")).isNull();
-
-    assertThat((List<?>)cmd.getOptArgs("a")).isEmpty();
-    assertThat((List<?>)cmd.getOptArgs("alphabet")).isEmpty();
-    assertThat((List<?>)cmd.getOptArgs("s")).isEmpty();
-    assertThat((List<?>)cmd.getOptArgs("silent")).isEmpty();
-  }
-
-  @Test
-  void testParse_oneArgByMultipleShortOptsWithArg() {
-    var args = new String[]{"-sa=123"};
-    var cliargs = new CliArgs("/path/to/app", args);
-
-    var result = cliargs.parse();
-
-    assertThat(result.exception()).isNull();
-
-    var cmd = result.cmd();
-    assertThat(cmd.getName()).isEqualTo("app");
-    assertThat(cmd.getArgs()).isEmpty();
-
-    assertThat(cmd.hasOpt("a")).isTrue();
-    assertThat(cmd.hasOpt("alphabet")).isFalse();
-    assertThat(cmd.hasOpt("s")).isTrue();
-    assertThat(cmd.hasOpt("silent")).isFalse();
-
-    assertThat((String)cmd.getOptArg("a")).isEqualTo("123");
-    assertThat((String)cmd.getOptArg("alphabet")).isNull();
-    assertThat((String)cmd.getOptArg("s")).isNull();
-    assertThat((String)cmd.getOptArg("silent")).isNull();
-
-    List<String> a = cmd.getOptArgs("a");
-    assertThat(a).containsExactly("123");
-    assertThat((List<?>)cmd.getOptArgs("alphabet")).isEmpty();
-    assertThat((List<?>)cmd.getOptArgs("s")).isEmpty();
-    assertThat((List<?>)cmd.getOptArgs("silent")).isEmpty();
-  }
-
-  @Test
-  void testParse_longOptNameIncludesHyphenMark() {
-    var args = new String[]{"--aaa-bbb-ccc=123"};
-    var cliargs = new CliArgs("/path/to/app", args);
-
-    var result = cliargs.parse();
-
-    assertThat(result.exception()).isNull();
-
-    var cmd = result.cmd();
-    assertThat(cmd.getName()).isEqualTo("app");
-    assertThat(cmd.getArgs()).isEmpty();
-
-    assertThat(cmd.hasOpt("aaa-bbb-ccc")).isTrue();
-    assertThat((String)cmd.getOptArg("aaa-bbb-ccc")).isEqualTo("123");
-    List<String> aaaBbbCcc = cmd.getOptArgs("aaa-bbb-ccc");
-    assertThat(aaaBbbCcc).containsExactly("123");
-  }
-
-  @Test
-  void testParse_optsIncludesEqualMark() {
-    var args = new String[]{"-sa=b=c"};
-    var cliargs = new CliArgs("/path/to/app", args);
-
-    var result = cliargs.parse();
-
-    assertThat(result.exception()).isNull();
-
-    var cmd = result.cmd();
-    assertThat(cmd.getName()).isEqualTo("app");
-    assertThat(cmd.getArgs()).isEmpty();
-
-    assertThat(cmd.hasOpt("a")).isTrue();
-    assertThat((String)cmd.getOptArg("a")).isEqualTo("b=c");
-
-    List<String> a = cmd.getOptArgs("a");
-    assertThat(a).containsExactly("b=c");
-  }
-
-  @Test
-  void testParse_optsIncludesMarks() {
-    var args = new String[]{"-sa=1,2-3"};
-    var cliargs = new CliArgs("path/to/app", args);
-
-    var result = cliargs.parse();
-
-    assertThat(result.exception()).isNull();
-
-    var cmd = result.cmd();
-    assertThat(cmd.getName()).isEqualTo("app");
-    assertThat(cmd.getArgs()).isEmpty();
-
-    assertThat(cmd.hasOpt("a")).isTrue();
-    assertThat((String)cmd.getOptArg("a")).isEqualTo("1,2-3");
-    List<String> a = cmd.getOptArgs("a");
-    assertThat(a).containsExactly("1,2-3");
-  }
-
-  @Test
-  void testParse_illegalLongOptIfIncludingInvalidChar() {
-    var args = new String[]{"-s", "--abc%def", "-a"};
-    var cliargs = new CliArgs("app", args);
-
-    var result = cliargs.parse();
-
-    assertThat(result.exception().toString()).isEqualTo(
-      "com.github.sttk.exception.ReasonedException: " +
-      "OptionHasInvalidChar{option=abc%def}"
-    );
-
-    try {
-      result.cmdOrThrow();
-      fail();
-    } catch (ReasonedException e) {
-      switch (e.getReason()) {
-        case OptionHasInvalidChar r -> {
-          assertThat(r.option()).isEqualTo("abc%def");
-        }
-        default -> fail(e);
+  @Nested
+  class TestsOfParse {
+
+    @Test
+    void shouldParseZeroArg() {
+      var cmd = new Cmd("/path/to/app", new String[]{});
+      try {
+        cmd.parse();
+      } catch (Exception e) {
+        fail(e);
       }
-      switch (e.getReason()) {
-        case InvalidOption r -> {
-          assertThat(r.option()).isEqualTo("abc%def");
-        }
-        default -> fail(e);
+
+      assertThat(cmd.name()).isEqualTo("app");
+      assertThat(cmd.args()).hasSize(0);
+      assertThat(cmd.hasOpt("a")).isFalse();
+      assertThat(cmd.optArg("a").isPresent()).isFalse();
+      assertThat(cmd.optArgs("a").isPresent()).isFalse();
+      assertThat(cmd.hasOpt("alphabet")).isFalse();
+      assertThat(cmd.optArg("alphabet").isPresent()).isFalse();
+      assertThat(cmd.optArgs("alphabet").isPresent()).isFalse();
+      assertThat(cmd.hasOpt("s")).isFalse();
+      assertThat(cmd.optArg("s").isPresent()).isFalse();
+      assertThat(cmd.optArgs("s").isPresent()).isFalse();
+      assertThat(cmd.hasOpt("silent")).isFalse();
+      assertThat(cmd.optArg("silent").isPresent()).isFalse();
+      assertThat(cmd.optArgs("silent").isPresent()).isFalse();
+    }
+
+    @Test
+    void shouldParseOneOptWithNoArg() {
+      var cmd = new Cmd("/path/to/app", new String[]{"abcd"});
+      try {
+        cmd.parse();
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(cmd.name()).isEqualTo("app");
+      assertThat(cmd.args()).containsExactly("abcd");
+      assertThat(cmd.hasOpt("a")).isFalse();
+      assertThat(cmd.optArg("a").isPresent()).isFalse();
+      assertThat(cmd.optArgs("a").isPresent()).isFalse();
+      assertThat(cmd.hasOpt("alphabet")).isFalse();
+      assertThat(cmd.optArg("alphabet").isPresent()).isFalse();
+      assertThat(cmd.optArgs("alphabet").isPresent()).isFalse();
+      assertThat(cmd.hasOpt("s")).isFalse();
+      assertThat(cmd.optArg("s").isPresent()).isFalse();
+      assertThat(cmd.optArgs("s").isPresent()).isFalse();
+      assertThat(cmd.hasOpt("silent")).isFalse();
+      assertThat(cmd.optArg("silent").isPresent()).isFalse();
+      assertThat(cmd.optArgs("silent").isPresent()).isFalse();
+    }
+
+    @Test
+    void shouldParseOneLongOpt() {
+      var cmd = new Cmd("/path/to/app", new String[]{"--silent"});
+      try {
+        cmd.parse();
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(cmd.name()).isEqualTo("app");
+      assertThat(cmd.args()).hasSize(0);
+      assertThat(cmd.hasOpt("a")).isFalse();
+      assertThat(cmd.optArg("a").isPresent()).isFalse();
+      assertThat(cmd.optArgs("a").isPresent()).isFalse();
+      assertThat(cmd.hasOpt("alphabet")).isFalse();
+      assertThat(cmd.optArg("alphabet").isPresent()).isFalse();
+      assertThat(cmd.optArgs("alphabet").isPresent()).isFalse();
+      assertThat(cmd.hasOpt("s")).isFalse();
+      assertThat(cmd.optArg("s").isPresent()).isFalse();
+      assertThat(cmd.optArgs("s").isPresent()).isFalse();
+      assertThat(cmd.hasOpt("silent")).isTrue();
+      assertThat(cmd.optArg("silent").isPresent()).isFalse();
+      assertThat(cmd.optArgs("silent").get()).hasSize(0);
+    }
+
+    @Test
+    void shouldParseOneLongOptWithArg() {
+      var cmd = new Cmd("/path/to/app", new String[]{"--alphabet=ABC"});
+      try {
+        cmd.parse();
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(cmd.name()).isEqualTo("app");
+      assertThat(cmd.args()).hasSize(0);
+      assertThat(cmd.hasOpt("a")).isFalse();
+      assertThat(cmd.optArg("a").isPresent()).isFalse();
+      assertThat(cmd.optArgs("a").isPresent()).isFalse();
+      assertThat(cmd.hasOpt("alphabet")).isTrue();
+      assertThat(cmd.optArg("alphabet").get()).isEqualTo("ABC");
+      assertThat(cmd.optArgs("alphabet").get()).containsExactly("ABC");
+      assertThat(cmd.hasOpt("s")).isFalse();
+      assertThat(cmd.optArg("s").isPresent()).isFalse();
+      assertThat(cmd.optArgs("s").isPresent()).isFalse();
+      assertThat(cmd.hasOpt("silent")).isFalse();
+      assertThat(cmd.optArg("silent").isPresent()).isFalse();
+      assertThat(cmd.optArgs("silent").isPresent()).isFalse();
+    }
+
+    @Test
+    void shouldParseOneShortOpt() {
+      var cmd = new Cmd("/path/to/app", new String[]{"-s"});
+      try {
+        cmd.parse();
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(cmd.name()).isEqualTo("app");
+      assertThat(cmd.args()).hasSize(0);
+      assertThat(cmd.hasOpt("a")).isFalse();
+      assertThat(cmd.optArg("a").isPresent()).isFalse();
+      assertThat(cmd.optArgs("a").isPresent()).isFalse();
+      assertThat(cmd.hasOpt("alphabet")).isFalse();
+      assertThat(cmd.optArg("alphabet").isPresent()).isFalse();
+      assertThat(cmd.optArgs("alphabet").isPresent()).isFalse();
+      assertThat(cmd.hasOpt("s")).isTrue();
+      assertThat(cmd.optArg("s").isPresent()).isFalse();
+      assertThat(cmd.optArgs("s").get()).hasSize(0);
+      assertThat(cmd.hasOpt("silent")).isFalse();
+      assertThat(cmd.optArg("silent").isPresent()).isFalse();
+      assertThat(cmd.optArgs("silent").isPresent()).isFalse();
+    }
+
+    @Test
+    void shouldParseOneShortOneWithArg() {
+      var cmd = new Cmd("/path/to/app", new String[]{"-a=123"});
+      try {
+        cmd.parse();
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(cmd.name()).isEqualTo("app");
+      assertThat(cmd.args()).hasSize(0);
+      assertThat(cmd.hasOpt("a")).isTrue();
+      assertThat(cmd.optArg("a").get()).isEqualTo("123");
+      assertThat(cmd.optArgs("a").get()).containsExactly("123");
+      assertThat(cmd.hasOpt("alphabet")).isFalse();
+      assertThat(cmd.optArg("alphabet").isPresent()).isFalse();
+      assertThat(cmd.optArgs("alphabet").isPresent()).isFalse();
+      assertThat(cmd.hasOpt("s")).isFalse();
+      assertThat(cmd.optArg("s").isPresent()).isFalse();
+      assertThat(cmd.optArgs("s").isPresent()).isFalse();
+      assertThat(cmd.hasOpt("silent")).isFalse();
+      assertThat(cmd.optArg("silent").isPresent()).isFalse();
+      assertThat(cmd.optArgs("silent").isPresent()).isFalse();
+    }
+
+    @Test
+    void shouldParseOneArgByMultipleShortOpts() {
+      var cmd = new Cmd("/path/to/app", new String[]{"-sa"});
+      try {
+        cmd.parse();
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(cmd.name()).isEqualTo("app");
+      assertThat(cmd.args()).hasSize(0);
+      assertThat(cmd.hasOpt("a")).isTrue();
+      assertThat(cmd.optArg("a").isPresent()).isFalse();
+      assertThat(cmd.optArgs("a").get()).hasSize(0);
+      assertThat(cmd.hasOpt("alphabet")).isFalse();
+      assertThat(cmd.optArg("alphabet").isPresent()).isFalse();
+      assertThat(cmd.optArgs("alphabet").isPresent()).isFalse();
+      assertThat(cmd.hasOpt("s")).isTrue();
+      assertThat(cmd.optArg("s").isPresent()).isFalse();
+      assertThat(cmd.optArgs("s").get()).hasSize(0);
+      assertThat(cmd.hasOpt("silent")).isFalse();
+      assertThat(cmd.optArg("silent").isPresent()).isFalse();
+      assertThat(cmd.optArgs("silent").isPresent()).isFalse();
+    }
+
+    @Test
+    void shouldParseOneArgByMultipleShortOptsWithArg() {
+      var cmd = new Cmd("/path/to/app", new String[]{"-sa=123"});
+      try {
+        cmd.parse();
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(cmd.name()).isEqualTo("app");
+      assertThat(cmd.args()).hasSize(0);
+      assertThat(cmd.hasOpt("a")).isTrue();
+      assertThat(cmd.optArg("a").get()).isEqualTo("123");
+      assertThat(cmd.optArgs("a").get()).containsExactly("123");
+      assertThat(cmd.hasOpt("alphabet")).isFalse();
+      assertThat(cmd.optArg("alphabet").isPresent()).isFalse();
+      assertThat(cmd.optArgs("alphabet").isPresent()).isFalse();
+      assertThat(cmd.hasOpt("s")).isTrue();
+      assertThat(cmd.optArg("s").isPresent()).isFalse();
+      assertThat(cmd.optArgs("s").get()).hasSize(0);
+      assertThat(cmd.hasOpt("silent")).isFalse();
+      assertThat(cmd.optArg("silent").isPresent()).isFalse();
+      assertThat(cmd.optArgs("silent").isPresent()).isFalse();
+    }
+
+    @Test
+    void shouldParseLongOptNameIncludingHyphenMarks() {
+      var cmd = new Cmd("/path/to/app", new String[]{"--aaa-bbb-ccc=123"});
+      try {
+        cmd.parse();
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(cmd.name()).isEqualTo("app");
+      assertThat(cmd.args()).hasSize(0);
+      assertThat(cmd.hasOpt("aaa-bbb-ccc")).isTrue();
+      assertThat(cmd.optArg("aaa-bbb-ccc").get()).isEqualTo("123");
+      assertThat(cmd.optArgs("aaa-bbb-ccc").get()).containsExactly("123");
+    }
+
+    @Test
+    void shouldParseOptsAndArgIncludingEqualMarks() {
+      var cmd = new Cmd("/path/to/app", new String[]{"-sa=b=c"});
+      try {
+        cmd.parse();
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(cmd.name()).isEqualTo("app");
+      assertThat(cmd.args()).hasSize(0);
+      assertThat(cmd.hasOpt("a")).isTrue();
+      assertThat(cmd.optArg("a").get()).isEqualTo("b=c");
+      assertThat(cmd.optArgs("a").get()).containsExactly("b=c");
+      assertThat(cmd.hasOpt("alphabet")).isFalse();
+      assertThat(cmd.optArg("alphabet").isPresent()).isFalse();
+      assertThat(cmd.optArgs("alphabet").isPresent()).isFalse();
+      assertThat(cmd.hasOpt("s")).isTrue();
+      assertThat(cmd.optArg("s").isPresent()).isFalse();
+      assertThat(cmd.optArgs("s").get()).hasSize(0);
+      assertThat(cmd.hasOpt("silent")).isFalse();
+      assertThat(cmd.optArg("silent").isPresent()).isFalse();
+      assertThat(cmd.optArgs("silent").isPresent()).isFalse();
+    }
+
+    @Test
+    void shouldParseOptsWithArgsIncludingMarks() {
+      var cmd = new Cmd("/path/to/app", new String[]{"-sa=1,2-3"});
+      try {
+        cmd.parse();
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(cmd.name()).isEqualTo("app");
+      assertThat(cmd.args()).hasSize(0);
+      assertThat(cmd.hasOpt("a")).isTrue();
+      assertThat(cmd.optArg("a").get()).isEqualTo("1,2-3");
+      assertThat(cmd.optArgs("a").get()).containsExactly("1,2-3");
+      assertThat(cmd.hasOpt("alphabet")).isFalse();
+      assertThat(cmd.optArg("alphabet").isPresent()).isFalse();
+      assertThat(cmd.optArgs("alphabet").isPresent()).isFalse();
+      assertThat(cmd.hasOpt("s")).isTrue();
+      assertThat(cmd.optArg("s").isPresent()).isFalse();
+      assertThat(cmd.optArgs("s").get()).hasSize(0);
+      assertThat(cmd.hasOpt("silent")).isFalse();
+      assertThat(cmd.optArg("silent").isPresent()).isFalse();
+      assertThat(cmd.optArgs("silent").isPresent()).isFalse();
+    }
+
+    @Test
+    void shouldParseButFailBecauseOfIllegalLongOptIncludingInvalidChar() {
+      var cmd = new Cmd("path/to/app", new String[]{"-s", "--abc%def", "-a"});
+      try {
+        cmd.parse();
+      } catch (OptionContainsInvalidChar e) {
+        assertThat(e.option()).isEqualTo("abc%def");
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(cmd.name()).isEqualTo("app");
+      assertThat(cmd.args()).hasSize(0);
+      assertThat(cmd.hasOpt("a")).isTrue();
+      assertThat(cmd.optArg("a").isPresent()).isFalse();
+      assertThat(cmd.optArgs("a").get()).hasSize(0);
+      assertThat(cmd.hasOpt("alphabet")).isFalse();
+      assertThat(cmd.optArg("alphabet").isPresent()).isFalse();
+      assertThat(cmd.optArgs("alphabet").isPresent()).isFalse();
+      assertThat(cmd.hasOpt("s")).isTrue();
+      assertThat(cmd.optArg("s").isPresent()).isFalse();
+      assertThat(cmd.optArgs("s").get()).hasSize(0);
+      assertThat(cmd.hasOpt("silent")).isFalse();
+      assertThat(cmd.optArg("silent").isPresent()).isFalse();
+      assertThat(cmd.optArgs("silent").isPresent()).isFalse();
+    }
+
+    @Test
+    void shouldParseButFailBecauseOfIllegalLongOptOfWhichFirstCharIsNumber() {
+      var cmd = new Cmd("/path/to/app", new String[]{"--1abc"});
+      try {
+        cmd.parse();
+      } catch (OptionContainsInvalidChar e) {
+        assertThat(e.option()).isEqualTo("1abc");
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(cmd.name()).isEqualTo("app");
+      assertThat(cmd.args()).hasSize(0);
+      assertThat(cmd.hasOpt("a")).isFalse();
+      assertThat(cmd.optArg("a").isPresent()).isFalse();
+      assertThat(cmd.optArgs("a").isPresent()).isFalse();
+      assertThat(cmd.hasOpt("alphabet")).isFalse();
+      assertThat(cmd.optArg("alphabet").isPresent()).isFalse();
+      assertThat(cmd.optArgs("alphabet").isPresent()).isFalse();
+      assertThat(cmd.hasOpt("s")).isFalse();
+      assertThat(cmd.optArg("s").isPresent()).isFalse();
+      assertThat(cmd.optArgs("s").isPresent()).isFalse();
+      assertThat(cmd.hasOpt("silent")).isFalse();
+      assertThat(cmd.optArg("silent").isPresent()).isFalse();
+      assertThat(cmd.optArgs("silent").isPresent()).isFalse();
+    }
+
+    @Test
+    void shouldParseButFailBecauseOfIllegalLongOptOfWhichFirstCharIsHyphen() {
+      var cmd = new Cmd("/path/to/app", new String[]{"---aaa=123"});
+      try {
+        cmd.parse();
+      } catch (OptionContainsInvalidChar e) {
+        assertThat(e.option()).isEqualTo("-aaa=123");
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(cmd.name()).isEqualTo("app");
+      assertThat(cmd.args()).hasSize(0);
+      assertThat(cmd.hasOpt("a")).isFalse();
+      assertThat(cmd.optArg("a").isPresent()).isFalse();
+      assertThat(cmd.optArgs("a").isPresent()).isFalse();
+      assertThat(cmd.hasOpt("alphabet")).isFalse();
+      assertThat(cmd.optArg("alphabet").isPresent()).isFalse();
+      assertThat(cmd.optArgs("alphabet").isPresent()).isFalse();
+      assertThat(cmd.hasOpt("s")).isFalse();
+      assertThat(cmd.optArg("s").isPresent()).isFalse();
+      assertThat(cmd.optArgs("s").isPresent()).isFalse();
+      assertThat(cmd.hasOpt("silent")).isFalse();
+      assertThat(cmd.optArg("silent").isPresent()).isFalse();
+      assertThat(cmd.optArgs("silent").isPresent()).isFalse();
+    }
+
+    @Test
+    void shouldParseButFailBecauseOfIllegalCharInShortOpt() {
+      var cmd = new Cmd("/path/to/app", new String[]{"-s", "--alphabet", "-a@"});
+      try {
+        cmd.parse();
+      } catch (OptionContainsInvalidChar e) {
+        assertThat(e.option()).isEqualTo("@");
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(cmd.name()).isEqualTo("app");
+      assertThat(cmd.args()).hasSize(0);
+      assertThat(cmd.hasOpt("a")).isTrue();
+      assertThat(cmd.optArg("a").isPresent()).isFalse();
+      assertThat(cmd.optArgs("a").get()).hasSize(0);
+      assertThat(cmd.hasOpt("alphabet")).isTrue();
+      assertThat(cmd.optArg("alphabet").isPresent()).isFalse();
+      assertThat(cmd.optArgs("alphabet").get()).hasSize(0);
+      assertThat(cmd.hasOpt("s")).isTrue();
+      assertThat(cmd.optArg("s").isPresent()).isFalse();
+      assertThat(cmd.optArgs("s").get()).hasSize(0);
+      assertThat(cmd.hasOpt("silent")).isFalse();
+      assertThat(cmd.optArg("silent").isPresent()).isFalse();
+      assertThat(cmd.optArgs("silent").isPresent()).isFalse();
+    }
+
+    @Test
+    void shouldParseWithEndOptMark() {
+      var cmd = new Cmd("/path/to/app", new String[]{"-s", "--", "-a", "-s@", "--", "xxx"});
+      try {
+        cmd.parse();
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(cmd.name()).isEqualTo("app");
+      assertThat(cmd.args()).containsExactly("-a", "-s@", "--", "xxx");
+      assertThat(cmd.hasOpt("a")).isFalse();
+      assertThat(cmd.optArg("a").isPresent()).isFalse();
+      assertThat(cmd.optArgs("a").isPresent()).isFalse();
+      assertThat(cmd.hasOpt("alphabet")).isFalse();
+      assertThat(cmd.optArg("alphabet").isPresent()).isFalse();
+      assertThat(cmd.optArgs("alphabet").isPresent()).isFalse();
+      assertThat(cmd.hasOpt("s")).isTrue();
+      assertThat(cmd.optArg("s").isPresent()).isFalse();
+      assertThat(cmd.optArgs("s").get()).hasSize(0);
+      assertThat(cmd.hasOpt("silent")).isFalse();
+      assertThat(cmd.optArg("silent").isPresent()).isFalse();
+      assertThat(cmd.optArgs("silent").isPresent()).isFalse();
+    }
+
+    @Test
+    void shouldParseSingleHyphen() {
+      var cmd = new Cmd("/path/to/app", new String[]{"-"});
+      try {
+        cmd.parse();
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(cmd.name()).isEqualTo("app");
+      assertThat(cmd.args()).containsExactly("-");
+      assertThat(cmd.hasOpt("a")).isFalse();
+      assertThat(cmd.optArg("a").isPresent()).isFalse();
+      assertThat(cmd.optArgs("a").isPresent()).isFalse();
+      assertThat(cmd.hasOpt("alphabet")).isFalse();
+      assertThat(cmd.optArg("alphabet").isPresent()).isFalse();
+      assertThat(cmd.optArgs("alphabet").isPresent()).isFalse();
+      assertThat(cmd.hasOpt("s")).isFalse();
+      assertThat(cmd.optArg("s").isPresent()).isFalse();
+      assertThat(cmd.optArgs("s").isPresent()).isFalse();
+      assertThat(cmd.hasOpt("silent")).isFalse();
+      assertThat(cmd.optArg("silent").isPresent()).isFalse();
+      assertThat(cmd.optArgs("silent").isPresent()).isFalse();
+    }
+
+    @Test
+    void shouldParseMultipleArgs() {
+      var cmd = new Cmd("/path/to/app", new String[]{
+        "--foo-bar", "-a", "--baz", "-bc=3", "qux", "-c=4", "quux"
+      });
+      try {
+        cmd.parse();
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(cmd.name()).isEqualTo("app");
+      assertThat(cmd.args()).containsExactly("qux", "quux");
+      assertThat(cmd.hasOpt("a")).isTrue();
+      assertThat(cmd.optArg("a").isPresent()).isFalse();
+      assertThat(cmd.optArgs("a").get()).hasSize(0);
+      assertThat(cmd.hasOpt("b")).isTrue();
+      assertThat(cmd.optArg("b").isPresent()).isFalse();
+      assertThat(cmd.optArgs("b").get()).hasSize(0);
+      assertThat(cmd.hasOpt("c")).isTrue();
+      assertThat(cmd.optArg("c").get()).isEqualTo("3");
+      assertThat(cmd.optArgs("c").get()).containsExactly("3", "4");
+      assertThat(cmd.hasOpt("foo-bar")).isTrue();
+      assertThat(cmd.optArg("foo-bar").isPresent()).isFalse();
+      assertThat(cmd.optArgs("foo-bar").get()).hasSize(0);
+      assertThat(cmd.hasOpt("baz")).isTrue();
+      assertThat(cmd.optArg("baz").isPresent()).isFalse();
+      assertThat(cmd.optArgs("baz").get()).hasSize(0);
+    }
+
+    @Test
+    void shouldParseAllArgsEvenIfFailed() {
+      var cmd = new Cmd("/path/to/app", new String[]{"--foo", "--1", "-b2ar", "--3", "baz"});
+      try {
+        cmd.parse();
+      } catch (OptionContainsInvalidChar e) {
+        assertThat(e.option()).isEqualTo("1");
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(cmd.name()).isEqualTo("app");
+      assertThat(cmd.args()).containsExactly("baz");
+      assertThat(cmd.hasOpt("foo")).isTrue();
+      assertThat(cmd.hasOpt("b")).isTrue();
+      assertThat(cmd.hasOpt("a")).isTrue();
+      assertThat(cmd.hasOpt("r")).isTrue();
+      assertThat(cmd.hasOpt("1")).isFalse();
+      assertThat(cmd.hasOpt("2")).isFalse();
+      assertThat(cmd.hasOpt("3")).isFalse();
+    }
+  }
+
+  @Nested
+  class TestsOfParseUntilSubCmd {
+
+    @Test
+    void testIfCommandLineArgumentsContainsNoCommandArgumentAndOption() {
+      var osArgs = new String[]{};
+      var cmd = new Cmd("/path/to/app", osArgs);
+
+      try {
+        var subCmd = cmd.parseUntilSubCmd();
+        assertThat(subCmd.isPresent()).isFalse();
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(cmd.name()).isEqualTo("app");
+      assertThat(cmd.args()).hasSize(0);
+    }
+
+    @Test
+    void testIfCommandLineArgumentsContainsOnlyCommandArguments() {
+      var osArgs = new String[]{"foo", "bar"};
+      var cmd = new Cmd("/path/to/app", osArgs);
+
+      try {
+        var subCmdOptional = cmd.parseUntilSubCmd();
+        assertThat(subCmdOptional.isPresent()).isTrue();
+        var subCmd = subCmdOptional.get();
+        assertThat(subCmd.name()).isEqualTo("foo");
+        assertThat(subCmd.args()).hasSize(0);
+
+        subCmd.parse();
+        assertThat(subCmd.name()).isEqualTo("foo");
+        assertThat(subCmd.args()).containsExactly("bar");
+      } catch (Exception e) {
+        fail(e);
       }
     }
 
-    var cmd = result.cmd();
-    assertThat(cmd.getName()).isEqualTo("app");
-    assertThat(cmd.getArgs()).isEmpty();
+    @Test
+    void testIfCommandLineArgumentsContainsOnlyCommandOptions() {
+      var osArgs = new String[]{"--foo", "-b"};
+      var cmd = new Cmd("/path/to/app", osArgs);
 
-    assertThat(cmd.hasOpt("a")).isTrue();
-    assertThat(cmd.hasOpt("s")).isTrue();
-    assertThat(cmd.hasOpt("abc%def")).isFalse();
-
-    assertThat((String)cmd.getOptArg("a")).isNull();
-    assertThat((String)cmd.getOptArg("s")).isNull();
-    assertThat((String)cmd.getOptArg("abc%def")).isNull();
-
-    assertThat((List<?>)cmd.getOptArgs("a")).isEmpty();
-    assertThat((List<?>)cmd.getOptArgs("s")).isEmpty();
-    assertThat((List<?>)cmd.getOptArgs("abc%def")).isEmpty();
-  }
-
-  @Test
-  void testParse_illegalLongOptIfFirstCharIsNumber() {
-    var args = new String[]{"--1abc"};
-    var cliargs = new CliArgs("app", args);
-
-    var result = cliargs.parse();
-
-    assertThat(result.exception().toString()).isEqualTo(
-      "com.github.sttk.exception.ReasonedException: " +
-      "OptionHasInvalidChar{option=1abc}"
-    );
-
-    try {
-      result.cmdOrThrow();
-      fail();
-    } catch (ReasonedException e) {
-      switch (e.getReason()) {
-        case OptionHasInvalidChar r -> {
-          assertThat(r.option()).isEqualTo("1abc");
-        }
-        default -> fail(e);
+      try {
+        var subCmdOptional = cmd.parseUntilSubCmd();
+        assertThat(subCmdOptional.isPresent()).isFalse();
+      } catch (Exception e) {
+        fail(e);
       }
-      switch (e.getReason()) {
-        case InvalidOption r -> {
-          assertThat(r.option()).isEqualTo("1abc");
-        }
-        default -> fail(e);
+
+      assertThat(cmd.name()).isEqualTo("app");
+      assertThat(cmd.args()).hasSize(0);
+      assertThat(cmd.hasOpt("foo")).isTrue();
+      assertThat(cmd.optArg("foo").isPresent()).isFalse();
+      assertThat(cmd.hasOpt("b")).isTrue();
+      assertThat(cmd.optArg("b").isPresent()).isFalse();
+    }
+
+    @Test
+    void testIfCommandLineArgumentsContainsBothCommandArgumentsAndOptions() {
+      var osArgs = new String[]{"--foo=123", "bar", "--baz", "-q=ABC", "quux"};
+      var cmd = new Cmd("/path/to/app", osArgs);
+
+      try {
+        var subCmdOptional = cmd.parseUntilSubCmd();
+        assertThat(subCmdOptional.isPresent()).isTrue();
+
+        var subCmd = subCmdOptional.get();
+        assertThat(subCmd.name()).isEqualTo("bar");
+        assertThat(subCmd.args()).hasSize(0);
+        assertThat(subCmd.hasOpt("baz")).isFalse();
+        assertThat(subCmd.optArg("baz").isPresent()).isFalse();
+        assertThat(subCmd.hasOpt("q")).isFalse();
+        assertThat(subCmd.optArg("q").isPresent()).isFalse();
+
+        subCmd.parse();
+        assertThat(subCmd.name()).isEqualTo("bar");
+        assertThat(subCmd.args()).containsExactly("quux");
+        assertThat(subCmd.hasOpt("baz")).isTrue();
+        assertThat(subCmd.optArg("baz").isPresent()).isFalse();
+        assertThat(subCmd.hasOpt("q")).isTrue();
+        assertThat(subCmd.optArg("q").get()).isEqualTo("ABC");
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(cmd.name()).isEqualTo("app");
+      assertThat(cmd.args()).hasSize(0);
+      assertThat(cmd.hasOpt("foo")).isTrue();
+      assertThat(cmd.optArg("foo").get()).isEqualTo("123");
+      assertThat(cmd.optArgs("foo").get()).containsExactly("123");
+    }
+
+    @Test
+    void testIfFailToParse() {
+      var osArgs = new String[]{"--f#o", "bar"};
+      var cmd = new Cmd("/path/to/app", osArgs);
+
+      try {
+        var optional = cmd.parseUntilSubCmd();
+        assertThat(optional.isPresent()).isFalse();
+      } catch (OptionContainsInvalidChar e) {
+        assertThat(e.option()).isEqualTo("f#o");
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(cmd.name()).isEqualTo("app");
+      assertThat(cmd.args()).hasSize(0);
+      assertThat(cmd.hasOpt("f#o")).isFalse();
+      assertThat(cmd.optArg("f#o").isPresent()).isFalse();
+    }
+
+    @Test
+    void testIfSubCommandIsLikePath() {
+      var osArgs = new String[]{"--foo-bar", "path/to/bar", "--baz", "qux"};
+      var cmd = new Cmd("/path/to/app", osArgs);
+
+      try {
+        var optional = cmd.parseUntilSubCmd();
+        assertThat(optional.isPresent());
+
+        var subCmd = optional.get();
+        subCmd.parse();
+
+        assertThat(cmd.name()).isEqualTo("app");
+        assertThat(cmd.args()).hasSize(0);
+        assertThat(cmd.hasOpt("foo-bar")).isTrue();
+
+        assertThat(subCmd.name()).isEqualTo("path/to/bar");
+        assertThat(subCmd.args()).containsExactly("qux");
+        assertThat(subCmd.hasOpt("baz")).isTrue();
+
+      } catch (Exception e) {
+        fail(e);
       }
     }
 
-    var cmd = result.cmd();
-    assertThat(cmd.getName()).isEqualTo("app");
-    assertThat(cmd.getArgs()).isEmpty();
+    @Test
+    void shouldParseSingleHyphen() {
+      var cmd = new Cmd("/path/to/app", new String[]{"-a", "-", "b", "-"});
+      try {
+        var optional = cmd.parseUntilSubCmd();
+        assertThat(optional.isPresent());
 
-    assertThat(cmd.hasOpt("1abc")).isFalse();
-    assertThat((String)cmd.getOptArg("1abc")).isNull();
-    assertThat((List<?>)cmd.getOptArgs("1abc")).isEmpty();
-  }
+        var subCmd = optional.get();
+        subCmd.parse();
 
-  @Test
-  void testParse_illegalLongOptIfFirstCharIsHyphen() {
-    var args = new String[]{"---aaa=123"};
-    var cliargs = new CliArgs("app", args);
+        assertThat(cmd.name()).isEqualTo("app");
+        assertThat(cmd.args()).hasSize(0);
+        assertThat(cmd.hasOpt("a")).isTrue();
 
-    var result = cliargs.parse();
-
-    assertThat(result.exception().toString()).isEqualTo(
-      "com.github.sttk.exception.ReasonedException: " +
-      "OptionHasInvalidChar{option=-aaa=123}"
-    );
-
-    try {
-      result.cmdOrThrow();
-      fail();
-    } catch (ReasonedException e) {
-      switch (e.getReason()) {
-        case OptionHasInvalidChar r -> {
-          assertThat(r.option()).isEqualTo("-aaa=123");
-        }
-        default -> fail(e);
-      }
-      switch (e.getReason()) {
-        case InvalidOption r -> {
-          assertThat(r.option()).isEqualTo("-aaa=123");
-        }
-        default -> fail(e);
+        assertThat(subCmd.name()).isEqualTo("-");
+        assertThat(subCmd.args()).containsExactly("b", "-");
+        assertThat(subCmd.hasOpt("a")).isFalse();
+      } catch (Exception e) {
+        fail(e);
       }
     }
 
-    var cmd = result.cmd();
-    assertThat(cmd.getName()).isEqualTo("app");
-    assertThat(cmd.getArgs()).isEmpty();
-
-    assertThat(cmd.hasOpt("aaa")).isFalse();
-    assertThat((String)cmd.getOptArg("aaa")).isNull();
-    assertThat((List<?>)cmd.getOptArgs("aaa")).isEmpty();
-  }
-
-  @Test
-  void testParse_IllegalCharInShortOpt() {
-    var cliargs = new CliArgs("app", "-s", "--alphabet", "-s@");
-
-    var result = cliargs.parse();
-
-    assertThat(result.exception().toString()).isEqualTo(
-      "com.github.sttk.exception.ReasonedException: " +
-      "OptionHasInvalidChar{option=@}"
-    );
-
-    try {
-      result.cmdOrThrow();
-      fail();
-    } catch (ReasonedException e) {
-      switch (e.getReason()) {
-        case OptionHasInvalidChar r -> {
-          assertThat(r.option()).isEqualTo("@");
-        }
-        default -> fail(e);
+    @Test
+    void shouldParseSingleHyphenButError() {
+      var cmd = new Cmd("/path/to/app", new String[]{"-a", "-@", "-", "b", "-"});
+      try {
+        cmd.parseUntilSubCmd();
+        fail();
+      } catch (OptionContainsInvalidChar e) {
+        assertThat(e.option()).isEqualTo("@");
+      } catch (Exception e) {
+        fail(e);
       }
-      switch (e.getReason()) {
-        case InvalidOption r -> {
-          assertThat(r.option()).isEqualTo("@");
-        }
-        default -> fail(e);
+      assertThat(cmd.name()).isEqualTo("app");
+      assertThat(cmd.args()).hasSize(0);
+      assertThat(cmd.hasOpt("a")).isTrue();
+    }
+
+    @Test
+    void shouldParseWithEndOptMark() {
+      var cmd = new Cmd("/path/to/app", new String[]{"sub", "--", "-a", "-s@", "--", "xxx"});
+      try {
+        var optional = cmd.parseUntilSubCmd();
+        assertThat(optional.isPresent());
+
+        var subCmd = optional.get();
+        subCmd.parse();
+
+        assertThat(cmd.name()).isEqualTo("app");
+        assertThat(cmd.args()).hasSize(0);
+        assertThat(cmd.hasOpt("a")).isFalse();
+        assertThat(cmd.optArg("a").isPresent()).isFalse();
+        assertThat(cmd.optArgs("a").isPresent()).isFalse();
+        assertThat(cmd.hasOpt("alphabet")).isFalse();
+        assertThat(cmd.optArg("alphabet").isPresent()).isFalse();
+        assertThat(cmd.optArgs("alphabet").isPresent()).isFalse();
+        assertThat(cmd.hasOpt("s")).isFalse();
+        assertThat(cmd.optArg("s").isPresent()).isFalse();
+        assertThat(cmd.optArgs("s").isPresent()).isFalse();
+        assertThat(cmd.hasOpt("silent")).isFalse();
+        assertThat(cmd.optArg("silent").isPresent()).isFalse();
+        assertThat(cmd.optArgs("silent").isPresent()).isFalse();
+
+        assertThat(subCmd.name()).isEqualTo("sub");
+        assertThat(subCmd.args()).containsExactly("-a", "-s@", "--", "xxx");
+        assertThat(subCmd.hasOpt("a")).isFalse();
+        assertThat(subCmd.optArg("a").isPresent()).isFalse();
+        assertThat(subCmd.optArgs("a").isPresent()).isFalse();
+        assertThat(subCmd.hasOpt("alphabet")).isFalse();
+        assertThat(subCmd.optArg("alphabet").isPresent()).isFalse();
+        assertThat(subCmd.optArgs("alphabet").isPresent()).isFalse();
+        assertThat(subCmd.hasOpt("s")).isFalse();
+        assertThat(subCmd.optArg("s").isPresent()).isFalse();
+        assertThat(subCmd.optArgs("s").isPresent()).isFalse();
+        assertThat(subCmd.hasOpt("silent")).isFalse();
+        assertThat(subCmd.optArg("silent").isPresent()).isFalse();
+        assertThat(subCmd.optArgs("silent").isPresent()).isFalse();
+      } catch (Exception e) {
+        fail(e);
       }
     }
 
-    var cmd = result.cmd();
-    assertThat(cmd.getName()).isEqualTo("app");
-    assertThat(cmd.getArgs()).isEmpty();
+    @Test
+    void shouldParseAfterEndOptMark() {
+      var cmd = new Cmd("/path/to/app", new String[]{"-s", "--", "-a", "-s@", "--", "xxx"});
+      try {
+        var optional = cmd.parseUntilSubCmd();
+        assertThat(optional.isPresent());
 
-    assertThat(cmd.hasOpt("s")).isTrue();
-    assertThat(cmd.hasOpt("@")).isFalse();
+        var subCmd = optional.get();
+        subCmd.parse();
 
-    assertThat((String)cmd.getOptArg("s")).isNull();
-    assertThat((String)cmd.getOptArg("@")).isNull();
+        assertThat(cmd.name()).isEqualTo("app");
+        assertThat(cmd.args()).hasSize(0);
+        assertThat(cmd.hasOpt("a")).isFalse();
+        assertThat(cmd.optArg("a").isPresent()).isFalse();
+        assertThat(cmd.optArgs("a").isPresent()).isFalse();
+        assertThat(cmd.hasOpt("alphabet")).isFalse();
+        assertThat(cmd.optArg("alphabet").isPresent()).isFalse();
+        assertThat(cmd.optArgs("alphabet").isPresent()).isFalse();
+        assertThat(cmd.hasOpt("s")).isTrue();
+        assertThat(cmd.optArg("s").isPresent()).isFalse();
+        assertThat(cmd.optArgs("s").get()).hasSize(0);
+        assertThat(cmd.hasOpt("silent")).isFalse();
+        assertThat(cmd.optArg("silent").isPresent()).isFalse();
+        assertThat(cmd.optArgs("silent").isPresent()).isFalse();
 
-    assertThat((List<?>)cmd.getOptArgs("s")).isEmpty();
-    assertThat((List<?>)cmd.getOptArgs("@")).isEmpty();
-  }
-
-  @Test
-  void testParse_useEndOptMark() {
-    var cliargs = new CliArgs("app", "-s", "--", "-s", "--", "-s@", "xxx");
-
-    var result = cliargs.parse();
-    assertThat(result.exception()).isNull();
-
-    var cmd = result.cmd();
-    assertThat(cmd.getName()).isEqualTo("app");
-    assertThat(cmd.getArgs()).containsExactly("-s", "--", "-s@", "xxx");
-
-    assertThat(cmd.hasOpt("s")).isTrue();
-    assertThat((String)cmd.getOptArg("s")).isNull();
-    assertThat((List<?>)cmd.getOptArgs("s")).isEmpty();
-  }
-
-  @Test
-  void testParse_singleHyphen() throws Exception {
-    var cliargs = new CliArgs("app", "-");
-
-    var result = cliargs.parse();
-
-    assertThat(result.exception()).isNull();
-    
-    var cmd = result.cmdOrThrow();
-    assertThat(cmd.getName()).isEqualTo("app");
-    assertThat(cmd.getArgs()).containsExactly("-");
-
-    assertThat(cmd.hasOpt("s")).isFalse();
-    assertThat((String)cmd.getOptArg("s")).isNull();
-    assertThat((List<?>)cmd.getOptArgs("s")).isEmpty();
-  }
-
-  @Test
-  void testParse_multipleArgs() throws Exception {
-    var cliargs = new CliArgs("app", "--foo-bar", "-a", "--baz", "-bc=3",
-      "qux", "-c=4", "quux");
-
-    var result = cliargs.parse();
-
-    assertThat(result.exception()).isNull();
-
-    var cmd = result.cmdOrThrow();
-    assertThat(cmd.getName()).isEqualTo("app");
-    assertThat(cmd.getArgs()).containsExactly("qux", "quux");
-
-    assertThat(cmd.hasOpt("a")).isTrue();
-    assertThat(cmd.hasOpt("b")).isTrue();
-    assertThat(cmd.hasOpt("c")).isTrue();
-    assertThat(cmd.hasOpt("foo-bar")).isTrue();
-    assertThat(cmd.hasOpt("baz")).isTrue();
-
-    assertThat((String)cmd.getOptArg("a")).isNull();
-    assertThat((String)cmd.getOptArg("b")).isNull();
-    assertThat((String)cmd.getOptArg("c")).isEqualTo("3");
-    assertThat((String)cmd.getOptArg("foo-bar")).isNull();
-    assertThat((String)cmd.getOptArg("baz")).isNull();
-
-    assertThat((List<?>)cmd.getOptArgs("a")).isEmpty();
-    assertThat((List<?>)cmd.getOptArgs("b")).isEmpty();
-    List<String> c = cmd.getOptArgs("c");
-    assertThat(c).containsExactly("3", "4");
-    assertThat((List<?>)cmd.getOptArgs("foo-bar")).isEmpty();
-    assertThat((List<?>)cmd.getOptArgs("baz")).isEmpty();
-  }
-
-  @Test
-  void testParse_parseAllArgsEvenIfError() {
-    var cliargs = new CliArgs("/path/to/app", "--foo", "--1", "-b2ar", "--3",
-      "baz");
-
-    var result = cliargs.parse();
-
-    try {
-      result.cmdOrThrow();
-      fail();
-    } catch (ReasonedException e) {
-      switch (e.getReason()) {
-        case OptionHasInvalidChar r -> {
-          assertThat(r.option()).isEqualTo("1");
-        }
-        default -> fail(e);
-      }
-      switch (e.getReason()) {
-        case InvalidOption r -> {
-          assertThat(r.option()).isEqualTo("1");
-        }
-        default -> fail(e);
+        assertThat(subCmd.name()).isEqualTo("-a");
+        assertThat(subCmd.args()).containsExactly("-s@", "--", "xxx");
+        assertThat(subCmd.hasOpt("a")).isFalse();
+        assertThat(subCmd.optArg("a").isPresent()).isFalse();
+        assertThat(subCmd.optArgs("a").isPresent()).isFalse();
+        assertThat(subCmd.hasOpt("alphabet")).isFalse();
+        assertThat(subCmd.optArg("alphabet").isPresent()).isFalse();
+        assertThat(subCmd.optArgs("alphabet").isPresent()).isFalse();
+        assertThat(subCmd.hasOpt("s")).isFalse();
+        assertThat(subCmd.optArg("s").isPresent()).isFalse();
+        assertThat(subCmd.optArgs("s").isPresent()).isFalse();
+        assertThat(subCmd.hasOpt("silent")).isFalse();
+        assertThat(subCmd.optArg("silent").isPresent()).isFalse();
+        assertThat(subCmd.optArgs("silent").isPresent()).isFalse();
+      } catch (Exception e) {
+        fail(e);
       }
     }
 
-    var cmd = result.cmd();
-    assertThat(cmd.getName()).isEqualTo("app");
-    assertThat(cmd.getArgs()).containsExactly("baz");
-
-    assertThat(cmd.hasOpt("foo")).isTrue();
-    assertThat(cmd.hasOpt("b")).isTrue();
-    assertThat(cmd.hasOpt("a")).isTrue();
-    assertThat(cmd.hasOpt("r")).isTrue();
-    assertThat(cmd.hasOpt("1")).isFalse();
-    assertThat(cmd.hasOpt("2")).isFalse();
-    assertThat(cmd.hasOpt("3")).isFalse();
+    @Test
+    void shouldParseAfterEndOptMarkButError() {
+      var cmd = new Cmd("/path/to/app", new String[]{"-@", "--", "-a", "-s@", "--", "xxx"});
+      try {
+        cmd.parseUntilSubCmd();
+        fail();
+      } catch (OptionContainsInvalidChar e) {
+        assertThat(e.option()).isEqualTo("@");
+      } catch (Exception e) {
+        fail(e);
+      }
+      assertThat(cmd.name()).isEqualTo("app");
+      assertThat(cmd.args()).hasSize(0);
+    }
   }
 }

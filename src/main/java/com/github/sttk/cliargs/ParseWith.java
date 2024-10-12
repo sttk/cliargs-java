@@ -5,217 +5,204 @@
  */
 package com.github.sttk.cliargs;
 
-import static com.github.sttk.cliargs.Util.isEmpty;
-import static com.github.sttk.cliargs.Parse.CmdArgCollector;
-import static com.github.sttk.cliargs.Parse.OptArgCollector;
-import static com.github.sttk.cliargs.Parse.OptArgNeeder;
+import static com.github.sttk.cliargs.Base.isEmpty;
+import static com.github.sttk.cliargs.Base.CollectArgs;
+import static com.github.sttk.cliargs.Base.CollectOpts;
+import static com.github.sttk.cliargs.Base.TakeOptArgs;
+import static com.github.sttk.cliargs.Base.parseArgs;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
 
-import com.github.sttk.cliargs.CliArgs.StoreKeyIsDuplicated;
-import com.github.sttk.cliargs.CliArgs.ConfigIsArrayButHasNoArg;
-import com.github.sttk.cliargs.CliArgs.ConfigHasDefaultsButHasNoArg;
-import com.github.sttk.cliargs.CliArgs.ConfigIsNotArrayButDefaultsIsArray;
-import com.github.sttk.cliargs.CliArgs.OptionNameIsDuplicated;
-import com.github.sttk.cliargs.CliArgs.UnconfiguredOption;
-import com.github.sttk.cliargs.CliArgs.OptionTakesNoArg;
-import com.github.sttk.cliargs.CliArgs.OptionNeedsArg;
-import com.github.sttk.cliargs.CliArgs.OptionIsNotArray;
-import com.github.sttk.cliargs.CliArgs.FailToConvertOptionArg;
-import com.github.sttk.exception.ReasonedException;
-import java.nio.file.Path;
+import com.github.sttk.cliargs.exceptions.InvalidOption;
+import com.github.sttk.cliargs.exceptions.StoreKeyIsDuplicated;
+import com.github.sttk.cliargs.exceptions.ConfigIsArrayButHasNoArg;
+import com.github.sttk.cliargs.exceptions.ConfigHasDefaultsButHasNoArg;
+import com.github.sttk.cliargs.exceptions.OptionNameIsDuplicated;
+import com.github.sttk.cliargs.exceptions.OptionTakesNoArg;
+import com.github.sttk.cliargs.exceptions.OptionIsNotArray;
+import com.github.sttk.cliargs.exceptions.OptionNeedsArg;
+import com.github.sttk.cliargs.exceptions.UnconfiguredOption;
+
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.HashMap;
-import java.util.Objects;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
-interface ParseWith {
+class ParseWith {
 
-  static Result parse(OptCfg[] optCfgs, String cmdName, String ...cliArgs) {
-    cmdName = Path.of(cmdName).getFileName().toString();
+  List<String> args = new ArrayList<>();
+  Map<String, List<String>> opts = new HashMap<>();
 
-    var opts = new HashMap<String, List<?>>();
+  boolean isAfterNonOpt;
+  boolean untilFirstArg;
 
+  ParseWith(boolean isAfterNonOpt, boolean untilFirstArg) {
+    this.isAfterNonOpt = isAfterNonOpt;
+    this.untilFirstArg = untilFirstArg;
+  }
+
+  Optional<Integer> parseArgsWith(List<String> osArgs, OptCfg[] optCfgs) throws InvalidOption {
+    final var self = this;
+
+    final var optSet = new HashSet<String>();
     final var cfgMap = new HashMap<String, Integer>();
-    boolean hasAnyOpt = false;
 
     final String anyOption = "*";
+    boolean hasAnyOpt = false;
 
     for (int i = 0, n = optCfgs.length; i < n; i++) {
       var cfg = optCfgs[i];
 
+      var names = cfg.names.stream().filter(nm -> !isEmpty(nm)).collect(Collectors.toList());
+
       var storeKey = cfg.storeKey;
+      if (isEmpty(storeKey) && !isEmpty(names)) {
+        storeKey = names.get(0);
+      }
+
       if (isEmpty(storeKey)) {
         continue;
       }
 
-      if (Objects.equals(anyOption, storeKey)) {
+      if (anyOption.equals(storeKey)) {
         hasAnyOpt = true;
         continue;
       }
 
-      if (opts.containsKey(storeKey)) {
-        var reason = new StoreKeyIsDuplicated(storeKey);
-        var exc = new ReasonedException(reason);
-        var cmd = new Cmd(cmdName, emptyList(), emptyMap());
-        return new Result(cmd, optCfgs, exc);
+      var firstName = isEmpty(names) ? storeKey : names.get(0);
+
+      if (optSet.contains(storeKey)) {
+        throw new StoreKeyIsDuplicated(storeKey, firstName);
       }
-      opts.put(storeKey, null); // To make opts contain this store key
+      optSet.add(storeKey);
 
       if (!cfg.hasArg) {
         if (cfg.isArray) {
-          var reason = new ConfigIsArrayButHasNoArg(storeKey);
-          var exc = new ReasonedException(reason);
-          var cmd = new Cmd(cmdName, emptyList(), emptyMap());
-          return new Result(cmd, optCfgs, exc);
+          throw new ConfigIsArrayButHasNoArg(storeKey, firstName);
         }
-        if (cfg.defaults != null) {
-          var reason = new ConfigHasDefaultsButHasNoArg(storeKey);
-          var exc = new ReasonedException(reason);
-          var cmd = new Cmd(cmdName, emptyList(), emptyMap());
-          return new Result(cmd, optCfgs, exc);
-        }
-      } else {
-        if (! cfg.isArray && cfg.defaults != null) {
-          if (cfg.defaults.isEmpty() || cfg.defaults.size() > 1) {
-            var reason = new ConfigIsNotArrayButDefaultsIsArray(cfg.storeKey);
-            var exc = new ReasonedException(reason);
-            var cmd = new Cmd(cmdName, emptyList(), emptyMap());
-            return new Result(cmd, optCfgs, exc);
+        if (cfg.defaults.isPresent()) {
+          var defaults = cfg.defaults.get();
+          if (! isEmpty(defaults)) {
+            throw new ConfigHasDefaultsButHasNoArg(storeKey, firstName);
           }
         }
       }
 
-      for (var nm : cfg.names) {
-        if (cfgMap.containsKey(nm)) {
-          var reason = new OptionNameIsDuplicated(storeKey, nm);
-          var exc = new ReasonedException(reason);
-          var cmd = new Cmd(cmdName, emptyList(), emptyMap());
-          return new Result(cmd, optCfgs, exc);
+      if (isEmpty(names)) {
+        cfgMap.put(firstName, i);
+      } else {
+        for (var name : names) {
+          if (cfgMap.containsKey(name)) {
+            throw new OptionNameIsDuplicated(storeKey, name);
+          }
+          cfgMap.put(name, i);
         }
-        cfgMap.put(nm, i);
       }
     }
-    final boolean HAS_ANY_OPT = hasAnyOpt;
+    final boolean has_any_opt = hasAnyOpt;
 
-    OptArgNeeder needArgs = opt -> {
-      var i = cfgMap.get(opt);
+    final TakeOptArgs takeOptArgs = opt -> {
+      Integer i = cfgMap.get(opt);
       if (i != null) {
         return optCfgs[i].hasArg;
       }
       return false;
     };
 
-    var args = new ArrayList<String>();
-    opts.clear();
-
-    CmdArgCollector collectArgs = str -> {
-      args.add(str);
+    final CollectArgs collectArgs = arg -> {
+      self.args.add(arg);
     };
 
-    OptArgCollector collectOpts = (name, arg) -> {
-      var i = cfgMap.get(name);
-      if (i == null) {
-        if (! HAS_ANY_OPT) {
-          var reason = new UnconfiguredOption(name);
-          throw new ReasonedException(reason);
+    final CollectOpts collectOpts = (name, arg) -> {
+      Integer i = cfgMap.get(name);
+      if (i != null) {
+        var cfg = optCfgs[i];
+
+        var storeKey = cfg.storeKey;
+        if (isEmpty(storeKey)) {
+          storeKey = cfg.names.stream().filter(nm -> !isEmpty(nm)).findFirst().orElse("");
         }
 
-        @SuppressWarnings("unchecked")
-        var list = (List<Object>)opts.get(name);
-        if (list == null) {
-          list = new ArrayList<>();
-          opts.put(name, list);
-        }
-        if (arg != null) {
-          list.add(arg);
-        }
-        return;
-      }
+        if (arg.isPresent()) {
+          if (! cfg.hasArg) {
+            throw new OptionTakesNoArg(name, storeKey);
+          }
 
-      var cfg = optCfgs[i];
-      var storeKey = cfg.storeKey;
+          var lst = self.opts.get(storeKey);
+          if (lst != null) {
+            if (! lst.isEmpty()) {
+              if (! cfg.isArray) {
+                throw new OptionIsNotArray(name, storeKey);
+              }
+            }
 
-      if (! cfg.hasArg) {
-        if (arg != null) {
-          var reason = new OptionTakesNoArg(name, storeKey, arg);
-          throw new ReasonedException(reason);
-        }
-      } else {
-        if (arg == null) {
-          var reason = new OptionNeedsArg(name, storeKey);
-          throw new ReasonedException(reason);
-        }
-      }
+            if (cfg.validator != null) {
+              cfg.validator.validate(storeKey, name, arg.get());
+            }
+            lst.add(arg.get());
+          } else {
+            if (cfg.validator != null) {
+              cfg.validator.validate(storeKey, name, arg.get());
+            }
 
-      @SuppressWarnings("unchecked")
-      var list = (List<Object>)opts.get(storeKey);
-      if (! cfg.isArray) {
-        int n = ((list == null) ? 0 : list.size()) + ((arg == null) ? 0 : 1);
-        if (n > 1) {
-          var reason = new OptionIsNotArray(name, storeKey, arg);
-          throw new ReasonedException(reason);
-        }
-      }
-
-      if (list == null) {
-        list = new ArrayList<>();
-        opts.put(storeKey, list);
-      }
-      if (cfg.hasArg) {
-        if (cfg.converter != null) {
-          try {
-            list.add(cfg.converter.convert(arg, name, storeKey));
-          } catch (ReasonedException e) {
-            throw e;
-          } catch (Exception e) {
-            var reason = new FailToConvertOptionArg(arg, name, storeKey);
-            throw new ReasonedException(reason, e);
+            lst = new ArrayList<>();
+            self.opts.put(storeKey, lst);
+            lst.add(arg.get());
           }
         } else {
-          list.add(arg);
+          if (cfg.hasArg) {
+            throw new OptionNeedsArg(name, storeKey);
+          }
+          self.opts.put(storeKey, emptyList());
+        }
+      } else {
+        if (!has_any_opt) {
+          throw new UnconfiguredOption(name);
+        }
+
+        if (arg.isPresent()) {
+          var lst = self.opts.get(name);
+          if (lst == null) {
+            lst = new ArrayList<String>();
+            self.opts.put(name, lst);
+          }
+          lst.add(arg.get());
+        } else {
+          self.opts.put(name, emptyList());
         }
       }
     };
 
-    ReasonedException exc = null;
-    try {
-      Parse.parseArgs(cliArgs, collectArgs, collectOpts, needArgs);
-    } catch (ReasonedException e) {
-      exc = e;
-    }
+    var idx = parseArgs(osArgs, collectArgs, collectOpts, takeOptArgs,
+      this.untilFirstArg, this.isAfterNonOpt);
 
-    for (var cfg : optCfgs) {
-      @SuppressWarnings("unchecked")
-      var list = (List<Object>)opts.get(cfg.storeKey);
+    for (int i = 0, nn = optCfgs.length; i < nn; i++) {
+      var cfg = optCfgs[i];
 
-      if (cfg.defaults != null) {
-        if (list == null) {
-          list = new ArrayList<>();
-          opts.put(cfg.storeKey, list);
-        }
-        if (list.isEmpty()) {
-          list.addAll(cfg.defaults);
-        }
+      var storeKey = cfg.storeKey;
+      if (isEmpty(storeKey)) {
+        storeKey = cfg.names.stream().filter(nm -> !isEmpty(nm)).findFirst().orElse("");
       }
 
-      if (cfg.postparser != null && list != null) {
-        try {
-          postprocess(cfg, list);
-        } catch (ReasonedException e) {
-          if (exc == null) {
-            exc = e;
-          }
+      if (isEmpty(storeKey)) {
+        continue;
+      }
+
+      if (anyOption.equals(storeKey)) {
+        continue;
+      }
+
+      var lst = self.opts.get(storeKey);
+      if (lst == null) {
+        var defs = cfg.defaults;
+        if (defs.isPresent()) {
+          self.opts.put(storeKey, defs.get());
         }
       }
     }
 
-    var cmd = new Cmd(cmdName, args, opts);
-    return new Result(cmd, optCfgs, exc);
-  }
-
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  static void postprocess(OptCfg c, List<Object> l) throws ReasonedException {
-    c.postparser.process((List)l);
+    return idx;
   }
 }

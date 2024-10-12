@@ -5,233 +5,64 @@
  */
 package com.github.sttk.cliargs;
 
-import static com.github.sttk.cliargs.Util.isEmpty;
-import com.github.sttk.exception.ReasonedException;
-import com.github.sttk.cliargs.unicode.Ascii;
-import com.github.sttk.cliargs.CliArgs.OptionHasInvalidChar;
-import java.nio.file.Path;
+import static com.github.sttk.cliargs.Base.CollectArgs;
+import static com.github.sttk.cliargs.Base.CollectOpts;
+import static com.github.sttk.cliargs.Base.TakeOptArgs;
+import static com.github.sttk.cliargs.Base.parseArgs;
+
+import com.github.sttk.cliargs.exceptions.InvalidOption;
+
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Optional;
 
-interface Parse {
+class Parse {
 
-  @FunctionalInterface
-  static interface CmdArgCollector {
-    void collect(String arg);
+  List<String> args = new ArrayList<>();
+  Map<String, List<String>> opts = new HashMap<>();
+  boolean isAfterNonOpt;
+
+  Parse(boolean isAfterNonOpt) {
+    this.isAfterNonOpt = isAfterNonOpt;
   }
 
-  @FunctionalInterface
-  static interface OptArgCollector {
-    void collect(String name, String arg) throws ReasonedException;
+  void parse(List<String> osArgs) throws InvalidOption {
+    CollectArgs collectArgs = arg -> this.args.add(arg);
 
-    default void collect(String name) throws ReasonedException {
-      collect(name, null);
-    }
-  }
-
-  @FunctionalInterface
-  static interface OptArgNeeder {
-    boolean isNeeded(String opt);
-  }
-
-  static Result parse(String cmdName, String[] cliArgs) {
-    var args = new ArrayList<String>();
-    var opts = new HashMap<String, List<?>>();
-
-    CmdArgCollector collectArgs = s -> args.add(s);
-
-    OptArgCollector collectOpts = (name, a) -> {
-      @SuppressWarnings("unchecked")
-      var arr = (List<Object>) opts.get(name);
-      if (arr == null) {
-        arr = new ArrayList<>();
-        opts.put(name, arr);
-      }
-      if (a != null) {
-        arr.add(a);
+    CollectOpts collectOpts = (name, option) -> {
+      var lst = this.opts.computeIfAbsent(name, k -> new ArrayList<String>());
+      if (option.isPresent()) {
+        lst.add(option.get());
       }
     };
 
-    OptArgNeeder _false = s -> false;
+    TakeOptArgs takeOptArgs = s -> false;
 
-    ReasonedException exc = null;
-    try {
-      parseArgs(cliArgs, collectArgs, collectOpts, _false);
-    } catch (ReasonedException e) {
-      exc = e;
-    }
-
-    cmdName = Path.of(cmdName).getFileName().toString();
-    var cmd = new Cmd(cmdName, args, opts);
-    return new Result(cmd, null, exc);
+    parseArgs(osArgs, collectArgs, collectOpts, takeOptArgs, false, this.isAfterNonOpt);
   }
 
-  static void parseArgs(
-    String[] cliArgs,
-    CmdArgCollector collectArgs,
-    OptArgCollector collectOpts,
-    OptArgNeeder needArgs
-  ) throws ReasonedException {
+  Optional<Cmd> parseUntilSubCmd(List<String> osArgs) throws InvalidOption {
+    CollectArgs collectArgs = arg -> {};
 
-    boolean isNonOpt = false;
-    String prevOptTakingArgs = "";
-    ReasonedException firstExc = null;
-
-    L0: for (int iArg = 0, nArg = cliArgs.length; iArg < nArg; iArg++) {
-      var arg = cliArgs[iArg];
-
-      if (isNonOpt) {
-        collectArgs.collect(arg);
-
-      } else if (! isEmpty(prevOptTakingArgs)) {
-        try {
-          collectOpts.collect(prevOptTakingArgs, arg);
-        } catch (ReasonedException e) {
-          if (firstExc == null) {
-            firstExc = e;
-          }
-          continue L0;
-        }
-        prevOptTakingArgs = "";
-
-      } else if (arg.startsWith("--")) {
-        if (arg.length() == 2) {
-          isNonOpt = true;
-          continue L0;
-        }
-        arg = arg.substring(2);
-
-        int i = 0, len = arg.length();
-        while (i < len) {
-          int cp = arg.codePointAt(i);
-          int cw = Character.charCount(cp);
-
-          if (i > 0) {
-            if (cp == 0x3d) { // '='
-              try {
-                var nm = arg.substring(0, i);
-                var a = arg.substring(i + cw);
-                collectOpts.collect(nm, a);
-              } catch (ReasonedException e) {
-                if (firstExc == null) {
-                  firstExc = e;
-                }
-                continue L0;
-              }
-              break;
-            }
-
-            if (! Ascii.isAlNumMarks(cp)) {
-              if (firstExc == null) {
-                var reason = new OptionHasInvalidChar(arg);
-                firstExc = new ReasonedException(reason);
-              }
-              continue L0;
-            }
-          } else {
-            if (! Ascii.isAlphabets(cp)) {
-              if (firstExc == null) {
-                var reason = new OptionHasInvalidChar(arg);
-                firstExc = new ReasonedException(reason);
-              }
-              continue L0;
-            }
-          }
-
-          i += cw;
-        }
-
-        if (i == len) {
-          if (needArgs.isNeeded(arg) && iArg < nArg - 1) {
-            prevOptTakingArgs = arg;
-            continue L0;
-          }
-
-          try {
-            collectOpts.collect(arg);
-          } catch (ReasonedException e) {
-            if (firstExc == null) {
-              firstExc = e;
-            }
-            continue L0;
-          }
-        }
-
-      } else if (arg.startsWith("-")) {
-        if (arg.length() == 1) {
-          collectArgs.collect(arg);
-          continue L0;
-        }
-
-        arg = arg.substring(1);
-        String name = "";
-        int i = 0, len = arg.length();
-        while (i < len) {
-          int cp = arg.codePointAt(i);
-          int cw = Character.charCount(cp);
-
-          if (i > 0) {
-            if (cp == 0x3d) { // '='
-              if (! isEmpty(name)) {
-                try {
-                  collectOpts.collect(name, arg.substring(i + cw));
-                } catch (ReasonedException e) {
-                  if (firstExc == null) {
-                    firstExc = e;
-                  }
-                }
-              }
-              continue L0;
-            }
-
-            if (! isEmpty(name)) {
-              try {
-                collectOpts.collect(name);
-              } catch (ReasonedException e) {
-                if (firstExc == null) {
-                  firstExc = e;
-                }
-              }
-            }
-          }
-
-          if (! Ascii.isAlphabets(cp)) {
-            if (firstExc == null) {
-              var reason = new OptionHasInvalidChar(Character.toString(cp));
-              firstExc = new ReasonedException(reason);
-            }
-            name = "";
-          } else {
-            name = Character.toString(cp);
-          }
-
-          i += cw;
-        }
-
-        if (i == len && ! isEmpty(name)) {
-          if (needArgs.isNeeded(name) && iArg < nArg - 1) {
-            prevOptTakingArgs = name;
-          } else {
-            try {
-              collectOpts.collect(name);
-            } catch (ReasonedException e) {
-              if (firstExc == null) {
-                firstExc = e;
-              }
-              continue L0;
-            }
-          }
-        }
-
-      } else {
-        collectArgs.collect(arg);
+    CollectOpts collectOpts = (name, option) -> {
+      var lst = this.opts.computeIfAbsent(name, k -> new ArrayList<String>());
+      if (option.isPresent()) {
+        lst.add(option.get());
       }
+    };
+
+    TakeOptArgs takeOptArgs = s -> false;
+
+    var idx = parseArgs(osArgs, collectArgs, collectOpts, takeOptArgs, true, this.isAfterNonOpt);
+    if (idx.isPresent()) {
+      boolean isAfterNonOpt = (idx.get() < 0);
+      int i = Math.abs(idx.get());
+      int n = osArgs.size();
+      return Optional.of(new Cmd(osArgs.get(i), osArgs.subList(i + 1, n), isAfterNonOpt));
     }
 
-    if (firstExc != null) {
-      throw firstExc;
-    }
+    return Optional.empty();
   }
 }

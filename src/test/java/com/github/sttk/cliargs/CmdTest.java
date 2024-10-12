@@ -1,129 +1,131 @@
 package com.github.sttk.cliargs;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.fail;
 
-import com.github.sttk.exception.ReasonedException;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.HashMap;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Nested;
+
+import com.github.sttk.cliargs.exceptions.InvalidOption;
+import java.util.Optional;
 
 @SuppressWarnings("missing-explicit-ctor")
 public class CmdTest {
 
   @Test
-  void testConstructor_nameAndArgsAndOpts() {
-    var args = new ArrayList<>(List.of("a0", "a1", "a2"));
-
-    var opts = new HashMap<String, List<?>>();
-    opts.put("o0", new ArrayList<Integer>(List.of(123, 456)));
-    opts.put("o1", new ArrayList<String>());
-
-    var cmd = new Cmd("foo", args, opts);
-    assertThat(cmd.getName()).isEqualTo("foo");
-    assertThat(cmd.getArgs()).containsExactly("a0", "a1", "a2");
-
-    List<Integer> o0 = cmd.getOptArgs("o0");
-    List<?> o1 = cmd.getOptArgs("o1");
-    List<?> o2 = cmd.getOptArgs("o2");
-    assertThat(o0).containsExactly(123, 456);
-    assertThat(o1).isEmpty();
-    assertThat(o2).isEmpty();
-  }
-
-  @Test
-  void testHasOptArg() {
-    var args = new ArrayList<>(List.of("a0", "a1", "a2"));
-
-    var opts = new HashMap<String, List<?>>();
-    opts.put("o0", new ArrayList<Integer>(List.of(123, 456)));
-    opts.put("o1", new ArrayList<String>());
-
-    var cmd = new Cmd("foo", args, opts);
-    assertThat(cmd.hasOpt("o0")).isTrue();
-    assertThat(cmd.hasOpt("o1")).isTrue();
-    assertThat(cmd.hasOpt("o2")).isFalse();
-  }
-
-  @Test
-  void testGetOptArg() {
-    var args = new ArrayList<>(List.of("a0", "a1", "a2"));
-
-    var opts = new HashMap<String, List<?>>();
-    opts.put("o0", new ArrayList<Integer>(List.of(123, 456)));
-    opts.put("o1", new ArrayList<String>());
-
-    var cmd = new Cmd("foo", args, opts);
-
-    Integer o0 = cmd.getOptArg("o0");
-    Integer o1 = cmd.getOptArg("o1");
-    Integer o2 = cmd.getOptArg("o2");
-    assertThat(o0).isEqualTo(123);
-    assertThat(o1).isNull();
-    assertThat(o2).isNull();
-  }
-
-  @Test
-  void testGetOptArgs_returnedListIsUnmodifiable() {
-    var args = new ArrayList<>(List.of("a0", "a1", "a2"));
-
-    var opts = new HashMap<String, List<?>>();
-    opts.put("o0", new ArrayList<Integer>(List.of(123, 456)));
-    opts.put("o1", new ArrayList<String>());
-
-    var cmd = new Cmd("foo", args, opts);
-
-    List<Integer> o0 = cmd.getOptArgs("o0");
-    List<String> o1 = cmd.getOptArgs("o1");
-    List<Object> o2 = cmd.getOptArgs("o2");
-    assertThat(o0).containsExactly(123, 456);
-    assertThat(o1).isEmpty();
-    assertThat(o2).isEmpty();
+  void should_create_a_new_instance() {
+    var cmd = new Cmd("/path/to/app");
+    assertThat(cmd.name()).isEqualTo("app");
+    assertThat(cmd.toString()).isEqualTo("Cmd{name=app, args=[], opts={}}");
 
     try {
-      o0.add(789);
+      cmd.parse();
+    } catch (InvalidOption e) {
+      fail(e);
+    }
+    assertThat(cmd.name()).isEqualTo("app");
+    assertThat(cmd.toString()).isEqualTo("Cmd{name=app, args=[], opts={}}");
+  }
+
+  @Test
+  void should_get_command_arguments() {
+    String[] osArgs = {"--foo", "--bar=baz", "--bar=qux", "quux", "corge"};
+    var cmd = new Cmd("/path/to/app", osArgs);
+    assertThat(cmd.name()).isEqualTo("app");
+    assertThat(cmd.toString()).isEqualTo("Cmd{name=app, args=[], opts={}}");
+    assertThat(cmd.args()).isEmpty();
+
+    try {
+      cmd.args().add("xxx");
+      fail();
+    } catch (UnsupportedOperationException e) {}
+
+    try {
+      cmd.parse();
+    } catch (InvalidOption e) {
+      fail(e);
+    }
+    assertThat(cmd.toString())
+      .isEqualTo("Cmd{name=app, args=[quux, corge], opts={bar=[baz, qux], foo=[]}}");
+    assertThat(cmd.args()).containsExactly("quux", "corge");
+
+    try {
+      cmd.args().add("xxx");
       fail();
     } catch (UnsupportedOperationException e) {}
   }
 
   @Test
-  void testGetArgs_returnedListIsUnmodifiable() {
-    var args = new ArrayList<>(List.of("a0", "a1", "a2"));
+  void should_check_option_is_specified() {
+    String[] osArgs = {"--foo", "--bar=baz", "--bar=qux", "quux", "corge"};
+    var cmd = new Cmd("/path/to/app", osArgs);
+    assertThat(cmd.name()).isEqualTo("app");
+    assertThat(cmd.toString()).isEqualTo("Cmd{name=app, args=[], opts={}}");
+    assertThat(cmd.hasOpt("foo")).isFalse();
+    assertThat(cmd.hasOpt("bar")).isFalse();
+    assertThat(cmd.hasOpt("baz")).isFalse();
 
-    var opts = new HashMap<String, List<?>>();
-    opts.put("o0", new ArrayList<Integer>(List.of(123, 456)));
-    opts.put("o1", new ArrayList<String>());
-
-    var cmd = new Cmd("foo", args, opts);
-
-    List<Integer> o0 = cmd.getOptArgs("o0");
-    List<String> o1 = cmd.getOptArgs("o1");
-    List<Object> o2 = cmd.getOptArgs("o2");
-    assertThat(o0).containsExactly(123, 456);
-    assertThat(o1).isEmpty();
-    assertThat(o2).isEmpty();
-
-    var a = cmd.getArgs();
     try {
-      a.add("xxx");
-      fail();
-    } catch (UnsupportedOperationException e) {}
+      cmd.parse();
+    } catch (InvalidOption e) {
+      fail(e);
+    }
+    assertThat(cmd.args()).containsExactly("quux", "corge");
+    assertThat(cmd.toString())
+      .isEqualTo("Cmd{name=app, args=[quux, corge], opts={bar=[baz, qux], foo=[]}}");
+    assertThat(cmd.hasOpt("foo")).isTrue();
+    assertThat(cmd.hasOpt("bar")).isTrue();
+    assertThat(cmd.hasOpt("baz")).isFalse();
   }
 
   @Test
-  void testToString() {
-    var args = new ArrayList<>(List.of("a0", "a1", "a2"));
+  void should_get_single_option_argument() {
+    String[] osArgs = {"--foo", "--bar=baz", "--bar=qux", "quux", "corge"};
+    var cmd = new Cmd("/path/to/app", osArgs);
+    assertThat(cmd.name()).isEqualTo("app");
+    assertThat(cmd.toString()).isEqualTo("Cmd{name=app, args=[], opts={}}");
+    assertThat(cmd.optArg("foo")).isEqualTo(Optional.empty());
+    assertThat(cmd.optArg("bar")).isEqualTo(Optional.empty());
+    assertThat(cmd.optArg("baz")).isEqualTo(Optional.empty());
 
-    var opts = new HashMap<String, List<?>>();
-    opts.put("o0", new ArrayList<Integer>(List.of(123, 456)));
-    opts.put("o1", new ArrayList<String>());
+    try {
+      cmd.parse();
+    } catch (InvalidOption e) {
+      fail(e);
+    }
+    assertThat(cmd.args()).containsExactly("quux", "corge");
+    assertThat(cmd.toString())
+      .isEqualTo("Cmd{name=app, args=[quux, corge], opts={bar=[baz, qux], foo=[]}}");
+    assertThat(cmd.optArg("foo")).isEqualTo(Optional.empty());
+    assertThat(cmd.optArg("bar")).isEqualTo(Optional.of("baz"));
+    assertThat(cmd.optArg("baz")).isEqualTo(Optional.empty());
+  }
 
-    var cmd = new Cmd("foo", args, opts);
+  @Test
+  void should_get_multiple_option_arguments() {
+    String[] osArgs = {"--foo", "--bar=baz", "--bar=qux", "quux", "corge"};
+    var cmd = new Cmd("/path/to/app", osArgs);
+    assertThat(cmd.name()).isEqualTo("app");
+    assertThat(cmd.toString()).isEqualTo("Cmd{name=app, args=[], opts={}}");
+    assertThat(cmd.optArgs("foo")).isEqualTo(Optional.empty());
+    assertThat(cmd.optArgs("bar")).isEqualTo(Optional.empty());
+    assertThat(cmd.optArgs("baz")).isEqualTo(Optional.empty());
 
-    assertThat(cmd.toString()).isEqualTo(
-      "Cmd{name=foo, args=[a0, a1, a2], opts={o0=[123, 456], o1=[]}}"
-    );
+    try {
+      cmd.parse();
+    } catch (InvalidOption e) {
+      fail(e);
+    }
+    assertThat(cmd.args()).containsExactly("quux", "corge");
+    assertThat(cmd.toString())
+      .isEqualTo("Cmd{name=app, args=[quux, corge], opts={bar=[baz, qux], foo=[]}}");
+    assertThat(cmd.optArgs("foo").get()).isEmpty();
+    assertThat(cmd.optArgs("bar").get()).containsExactly("baz", "qux");
+    assertThat(cmd.optArgs("baz")).isEqualTo(Optional.empty());
+
+    try {
+      cmd.optArgs("bar").get().add("xxx");
+      fail();
+    } catch (UnsupportedOperationException e) {}
   }
 }

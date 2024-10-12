@@ -46,97 +46,76 @@ dependencies {
 
 ### Parse without configurations
 
-This library provides the method `CliArgs#parse` which parses command line arguments without configurations.
-This method automatically divides command line arguments to options and command arguments.
+This library provides the method `Cmd#parse` which parses command line arguments without configurations.
+This method automatically divides command line arguments to command options and command arguments.
 
-Command line arguments starting with `-` or `--` are options, and others are command arguments.
+Command line arguments starting with `-` or `--` are command options, and others are command arguments.
 If you want to specify a value to an option, follows `"="` and the value after the option, like `foo=123`.
 
 All command line arguments after `--` are command arguments, even they starts
 with `-` or `--`.
 
 ```java
-  var args = new String[]{"--foo-bar", "hoge", "--baz=1", "-z=2", "-xyz=3", "fuga"};
-  var cliargs = new CliArgs("path/to/app", args);
-  var result = cliargs.parse();
-
-  if (result.exception() == null) {
-    var cmd = result.cmd();
-    cmd.getName();             // "app"
-    cmd.getArgs();             // ["hoge", "fuga"]
-    cmd.hasOpt("foo-bar");     // true
-    cmd.hasOpt("baz");         // true
-    cmd.hasOpt("x");           // true
-    cmd.hasOpt("y");           // true
-    cmd.hasOpt("z");           // true
-    cmd.getOptArg("foo-bar");  // null
-    cmd.getOptArg("baz");      // "1"
-    cmd.getOptArg("x");        // null
-    cmd.getOptArg("y");        // null
-    cmd.getOptArg("z");        // "2"
-    cmd.getOptArgs("foo-bar"); // []
-    cmd.getOptArgs("baz");     // [1]
-    cmd.getOptArgs("x");       // []
-    cmd.getOptArgs("y");       // []
-    cmd.getOptArgs("z");       // ["2", "3"]
-  }
-```
-
-Or
-
-```java
-  var args = new String[]{"--foo-bar", "hoge", "--baz", "1", "-z=2", "-xyz=3", "fuga"};
-  var cliargs = new CliArgs("path/to/app", args);
+  var osArgs = new String[]{"--foo-bar", "hoge", "--baz=1", "-z=2", "-xyz=3", "fuga"};
+  var cmd = new Cmd("path/to/app", osArgs);
   try {
-    var cmd = cliargs.parse().cmdOrThrow();
-    cmd.getName();             // "app"
-    cmd.getArgs();             // ["hoge", "fuga"]
-    cmd.hasOpt("foo-bar");     // true
-    // ...
-
-  } catch (ReasonedException e) {
+    cmd.parse();
+  } catch (InvalidOption e) {
     ...
   }
-```
 
+  cmd.name();             // "app"
+  cmd.args();             // ["hoge", "fuga"]
+  cmd.hasOpt("foo-bar");  // true
+  cmd.hasOpt("baz");      // true
+  cmd.hasOpt("x");        // true
+  cmd.hasOpt("y");        // true
+  cmd.hasOpt("z");        // true
+  cmd.optArg("foo-bar");  // null
+  cmd.optArg("baz");      // "1"
+  cmd.optArg("x");        // null
+  cmd.optArg("y");        // null
+  cmd.optArg("z");        // "2"
+  cmd.optArgs("foo-bar"); // []
+  cmd.optArgs("baz");     // [1]
+  cmd.optArgs("x");       // []
+  cmd.optArgs("y");       // []
+  cmd.optArgs("z");       // ["2", "3"]
+```
 
 ### Parse with configurations
 
-This library provides the method `CliArgs#parseWith` which parses command line arguments with configurations.
-This method takes an array of option configurations: `OptCfg[]` as the argument, and divides command line arguments to options and command arguments with this configurations.
+This library provides the method `Cmd#parseWith` which parses command line arguments with option configurations.
+This method takes an `OptCfg` array as the argument, and divides command line arguments to command options and command arguments with this configurations.
 
-And option cnfiguration has fields: `storeKey`, `names`, `hasArg`, `isArray`, `type`, `defaults`, `decc`, `argInHelp`, `converter`, and `postparser`.
+And option configuration has fields: `storeKey`, `names`, `hasArg`, `isArray`, `type`, `defaults`, `desc`, `argInHelp`, and `validator`.
 
-`storeKey` field is specified the key name to store the option value in the option map.
+`storeKey` field is to specify the key name to store the option value in the option map.
 If this field is not specified the first element of `names` field is set instead.
 
-`names` field is a string array and specified the option names, that are both long options and short options.
+`names` field is a string array and is to specify the option names, that are long options or short options.
 The order of elements in this field is used in a help text.
 If you want to prioritize the output of short option name first in the help text, like `-f, --foo-bar`, but use the long option name as the key in the option map, write `storekey` and `names` fields as follows:
 `OptCfg(field("foo-bar", names("f", "foo-bar"))`.
 
-`hasArg` field indicates the option requires one or more values.
+`hasArg` field is to specify the option requires one or more values.
 
-`isArray` field indicates the option can have multiple values.
+`isArray` field is to specify the option can have multiple values.
 
-`types` field is set the data type of the option value(s).
-
-`defaults` field is an array which is used as default one or more values if the
+`defaults` field is to specify an array which is used as default one or more values if the
 option is not specified in command line arguments.
 
-`desc` field is a description of the option for help text.
+`desc` field is to specify a description of the option for help text.
 
-`argInHelp` field is a text which is output after option name and aliases as an option value in help text.
+`argInHelp` field is to specify a text which is output after option name and aliases as an option value in help text.
 
-`converter` field is a functional interface which converts an option argument string to the instance of the class specified by `type` field.
-
-`postparser` field is a functional interface which processes option argument(s) after parsing if this field is specified.
+`validator` field is to specify an instance of a functional interface which validates an option argument string as a value of the desired type.
 
 ```java
 import com.github.sttk.cliargs.OptCfg.NamedParam.*;
 ...
-  var args = new String[]{"--foo-bar", "hoge", "--baz", "1", "-z=2", "-x", "fuga"};
-  var cliargs = new CliArgs("path/to/app", args);
+  var osArgs = new String[]{"--foo-bar", "hoge", "--baz", "1", "-z=2", "-x", "fuga"};
+  var cmd = new Cmd("path/to/app", osArgs);
 
   var optCfgs = new OptCfg[] {
     new OptCfg(
@@ -159,30 +138,32 @@ import com.github.sttk.cliargs.OptCfg.NamedParam.*;
     )
   };
 
-  var result = cliargs.parseWith(optCfgs);
-  if (result.exception() == null) {
-    var cmd = result.cmd();
-    cmd.getName();             // "app"
-    cmd.getArgs();             // ["hoge", "fuga"]
-    cmd.hasOpt("FooBar");      // true
-    cmd.hasOpt("baz");         // true
-    cmd.hasOpt("x");           // true, due to "*" config
-    cmd.getOptArg("FooBar");   // null
-    cmd.getOptArg("baz");      // 1
-    cmd.getOptArg("x");        // null
-    cmd.getOptArgs("FooBar");  // []
-    cmd.getOptArgs("baz");     // [1, 2]
-    cmd.getOptArgs("x");       // []
+  try {
+    cmd.parseWith(optCfgs);
+  } catch (InvalidOption e) {
+    ...
   }
+
+  cmd.getName();             // "app"
+  cmd.getArgs();             // ["hoge", "fuga"]
+  cmd.hasOpt("FooBar");      // true
+  cmd.hasOpt("baz");         // true
+  cmd.hasOpt("x");           // true, due to "*" config
+  cmd.getOptArg("FooBar");   // null
+  cmd.getOptArg("baz");      // 1
+  cmd.getOptArg("x");        // null
+  cmd.getOptArgs("FooBar");  // []
+  cmd.getOptArgs("baz");     // [1, 2]
+  cmd.getOptArgs("x");       // []
 ```
 
-This library provides `Help` class which generates help text from an `OptCfg` array.
+This library provides `Help` class which generates a help text from an `OptCfg` array.
 The following help text is generated from the above `optCfgs`.
 
 ```java
   var help = new Help();
   help.addText("This is the usage description.");
-  help.addOpts(optCfgs, 0, 2);
+  help.addOptsWithMargins(optCfgs, 2, 0);
   help.print();
 
   // (stdout)
@@ -193,8 +174,9 @@ The following help text is generated from the above `optCfgs`.
 
 ### Parse for an option store with `@Opt` annoatation
 
-This library provides the method `CliArgs#parseFor` which takes an option store object as the argument, and puts option values by parsing command line arguments to it.
-The `@Opt` annotations are needed for the fields of the option store.
+This library provides the method `Cmd#parseFor` which takes an option store object as the argument, and puts option values by parsing command line arguments to it.
+The `@Opt` annotations can be attached to the fields of the option store for their option
+configurations.
 
 This `@Opt` annotations can have the attributes: `cfg`, `desc`, and `arg`.
 `cfg` can be specified the option name, aliases and default value(s).
@@ -209,11 +191,11 @@ The format of the `cfg` attribute is as follows:
 ```
 
 `desc` is what to specify a option description.
-And `arg` is what to specify a text for an option argument value in help text.
+And `arg` is what to specify a text for an option argument value in a help text.
 
 ```java
-  var args = new String[]{"--foo-bar", "hoge", "--baz", "1", "-z=2", "-x", "fuga"};
-  var cliargs = new CliArgs("path/to/app", args);
+  var osArgs = new String[]{"--foo-bar", "hoge", "--baz", "1", "-z=2", "-x", "fuga"};
+  var cmd = new Cmd("path/to/app", osArgs);
 
   class Options {
     @Opt(cfg="foo-bar", desc="This is description of foo-bar.")
@@ -228,9 +210,13 @@ And `arg` is what to specify a text for an option argument value in help text.
 
   var options = new Options();
 
-  var result = cliargs.parseFor(options);
-  var optCfgs = result.optCfgs();
-  var cmd = result.cmdOrThrow();
+  try {
+    cmd.parseFor(options);
+  } catch (InvalidOption | FailToSetOptionStoreField e) {
+    ...
+  }
+
+  var optCfgs = cmd.optCfgs();
 
   cmd.getName();             // "app"
   cmd.getArgs();             // ["hoge", "fuga"]
@@ -282,12 +268,12 @@ And `arg` is what to specify a text for an option argument value in help text.
             // }
 ```
 
-The following help text is generated from the above optCfgs.
+The following help text is generated from the above `optCfgs`.
 
 ```java
   var help = new Help();
   help.addText("This is the usage description.")
-  help.addOpts(optCfgs, 12, 1);
+  help.addOptsWithIndentAndMargins(optCfgs, 12, 1, 0);
   help.print();
 
   // (stdout)
@@ -300,34 +286,31 @@ The following help text is generated from the above optCfgs.
 
 ### Parse command line arguments including sub commands
 
-This library provides the static method `CliArgs.findFirstArg` which returns the index of the first command argument.
-If this index is negative, there is no command argument.
-This static method enables to parse command line arguments with supporting sub
-command, as follows:
+This library provides the methods `Cmd#parseUntilSubCmd`, `Cmd#parseUntilSubCmdWith`, `Cmd#parseUntilSubCmdFor` that parses command line arguments until a sub command is found.
+The return of those methods is an `Optional<Cmd>` object.
+If no sub command is found, the returned object is empty.
 
 ```java
-  var args = new String[]{"--foo-bar", "hoge", "--baz", "1", "-z=2", "-x", "abcd"};
-  int index = CliArgs.findFirstArg(args);  // index => 1
-  if (index < 0) throws ...;  // no sub command
+  var osArgs = new String[]{"--foo-bar", "hoge", "--baz", "1", "-z=2", "-x", "abcd"};
 
-  var topArgs = Arrays.copyOf(args, index);
-  var subArgs = Arrays.copyOfRange(args, index + 1, args.length);
+  var cmd = new Cmd("path/to/app", osArgs);
 
-  var cliargs = new CliArgs("app", topArgs);
-  var result = cliargs.parseFor(topOptions);
-  var topOptCfgs = result.optCfgs();
-  var topCmd = result.cmdOrThrow();
+  var optional = cmd.parseUntilSubCmdWith(topOptCfgs);
+  
+  if (optional.isEmpty()) {
+    ...  // no sub command
+  }
+  var subCmd = optional.get();
 
-  cliargs = new CliArgs(args.get(index), subArgs);
-  switch (args.get(index)) {
+  switch subCmd.name() {
   case "hoge":
-    result = cliargs.parseFor(hogeOptions);
-    var hogeOptCfgs = result.optCfgs();
-    var hogeCmd = result.cmdOrThrow();
+    subCmd.parseWith(hogeOptCfgs);
     ...
     break;
   case "fuga":
+    subCmd.parseWith(fugaOptCfgs);
     ...
+    break;
   }
 ```
 
@@ -337,12 +320,12 @@ And the help text can be generated as follows:
   var help = new Help();
   help.addText("This is the usage of this command.");
   help.addText("\nOPTIONS.");
-  help.addOpts(topOptCfgs, 12, 2);
+  help.addOptsWithIndentAndMargins(topOptCfgs, 12, 2, 0);
   help.addText("\nSUB COMMANDS:");
-  help.addText(String.format("%12s%s", "hoge", "The description of hoge sub-command.");
-  help.addOpts(hogeOpts, 12, 2);
-  help.addText(String.format("%12s%s", "fuga", "The description of fuga sub-command.");
-  help.addOpts(fugaOpts, 12, 2);
+  help.addText("hoge");
+  help.addOptsWithIndentAndMargins(hogeOptCfgs, 12, 2, 0);
+  help.addText("\nfuga");
+  help.addOptsWithIndentAndMargins(fugaOptCfgs, 12, 2, 0);
   help.print();
 
   // (stdout)
@@ -365,7 +348,7 @@ And the help text can be generated as follows:
 ## Native build
 
 This library supports native build with GraalVM.
-However, since it utilizes reflection for the option store object passed to `CliArgs#parseFor`, the reflection configurations for the class of this object need to be specified in `reflect-config.json`. The configuration are as follows:
+However, since it utilizes reflection for the option store object passed to `Cmd#parseFor`, the reflection configurations for the class of this object need to be specified in `reflect-config.json`. The configuration are as follows:
 
 ```json
 [
@@ -391,8 +374,9 @@ This framework supports JDK 21 or later.
 
 ### Actually checked JDK versions:
 
-- GraalVM CE 21.0.2+13.1 (openjdk version 21.0.2)
-- GraalVM CE 22.0.1+8.1 (openjdk version 22.0.1)
+- GraalVM 21.0.4+8.1 (build 21.0.4+8-LTS-jvmci-23.1-b41)
+- GraalVM 22.0.2+9.1 (build 22.0.2+9-jvmci-b01)
+- GraalVM 23+37.1 (build 23+37-jvmci-b01)
 
 ## License
 

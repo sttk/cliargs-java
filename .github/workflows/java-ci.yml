@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        javaver: [21, 22]
+        javaver: [21, 22, 23]
         os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
     - uses: actions/checkout@v4
@@ -24,8 +24,5 @@ jobs:
         native-image-job-reports: 'true'
     - name: Build and test
       run: mvn package
-    - name: Prepare  native test
-      run: |
-        cp .ci/${{ matrix.os }}/resource-config.json src/test/resources/META-INF/native-image/
     - name: Native test
       run: mvn -Pnative test
