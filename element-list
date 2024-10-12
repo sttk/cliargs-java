@@ -1,3 +1,5 @@
 module:com.github.sttk.cliargs
 com.github.sttk.cliargs
-com.github.sttk.cliargs.convert
+com.github.sttk.cliargs.annotations
+com.github.sttk.cliargs.exceptions
+com.github.sttk.cliargs.validators
