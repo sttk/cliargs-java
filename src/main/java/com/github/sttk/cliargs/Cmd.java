@@ -135,7 +135,9 @@ public class Cmd {
   }
 
   /**
-   * {@inheritDoc}
+   * Returns a {@code String} object representing the content of this object.
+   *
+   * @return A stirng representation of the content of this object.
    */
   @Override
   public String toString() {

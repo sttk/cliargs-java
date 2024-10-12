@@ -373,20 +373,6 @@ public class OptCfg {
   }
 
   /**
-   * Is the functional interface to process option arguments when the option has been parsed.
-   */
-  @FunctionalInterface
-  public interface OnParsed {
-    /**
-     * Processes the option arguments.
-     *
-     * @param optArgs  The list of the option arguments.
-     * @throws FailToSetOptionStoreField  If failed to set the field value of the option store.
-     */
-    void process(List<String> optArgs) throws FailToSetOptionStoreField;
-  }
-
-  /**
    * Makes an {@link OptCfg} array from the fields opt the option store with the annotation
    * {@link Opt}.
    * <p>
