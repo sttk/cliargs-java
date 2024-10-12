@@ -26,7 +26,7 @@ The examples of declaring that repository and the dependency on this package in 
     <dependency>
       <groupId>io.github.sttk</groupId>
       <artifactId>cliargs</artifactId>
-      <version>0.1.0</version>
+      <version>0.2.0</version>
     </dependency>
   </dependencies>
 ```
@@ -38,7 +38,7 @@ repositories {
   mavenCentral()
 }
 dependencies {
-  implementation 'io.github.sttk:cliargs:0.1.0'
+  implementation 'io.github.sttk:cliargs:0.2.0'
 }
 ```
 
@@ -387,8 +387,8 @@ See the file LICENSE in this distribution for more details.
 
 
 [repo-url]: https://github.com/sttk/cliargs-java
-[mvn-img]: https://img.shields.io/badge/maven_central-0.1.0-276bdd.svg
-[mvn-url]: https://central.sonatype.com/artifact/io.github.sttk/cliargs/0.1.0
+[mvn-img]: https://img.shields.io/badge/maven_central-0.2.0-276bdd.svg
+[mvn-url]: https://central.sonatype.com/artifact/io.github.sttk/cliargs/0.2.0
 [io-img]: https://img.shields.io/badge/github.io-Javadoc-4d7a97.svg
 [io-url]: https://sttk.github.io/cliargs-java/
 [ci-img]: https://github.com/sttk/cliargs-java/actions/workflows/java-ci.yml/badge.svg?branch=main
